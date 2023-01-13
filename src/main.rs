@@ -2,6 +2,8 @@ use std::{
     net::TcpStream, mem::size_of, io::{Write, Read}, str::from_utf8,
 };
 
+use crate::mc_protocol::VarInt;
+
 const PROTOCOL_VERSION: i32 = 760;
 #[repr(i32)]
 #[derive(Clone, Copy)]
@@ -27,11 +29,90 @@ pub mod mc_protocol {
         bytes
     }
 
-    // pub fn parse_packet(bytes: Vec<u8>) -> Box<dyn InboundPacket> {
-    //     let b = Box::new(TestStruct{});
-        
-    //     Box::new(TestStruct{})
-    // }
+    /// A `VarInt` is a variable-length data type encoding a two's
+    /// complement signed 32-bit integer. A `VarInt` can be anywhere
+    /// between 1 and 5 bytes. https://wiki.vg/Protocol#VarInt_and_VarLong
+    /// <br>
+    /// This structure is meant purely for data I/O and should not be used
+    /// to perform any sort of arithmetic.
+    #[derive(Clone)]
+    pub struct VarInt {
+        bytes: Vec<u8>,
+        value: i32
+    }
+
+    impl From<i32> for VarInt {
+        /// Creates a `VarInt` representation of `value`.
+        fn from(value: i32) -> Self {
+            VarInt{ bytes: to_varint(value), value }
+        }
+    }
+
+    impl From<&[u8]> for VarInt {
+        /// Creates a `VarInt` from a slice `&[u8]` whose leading bytes represent
+        /// a `VarInt` string between 1 and 5 bytes. Because it is expected that the
+        /// data being passed to `from_bytes` is a slice of a Minecraft packet, and
+        /// the size of a `VarInt` is variadic, a slice larger than the encompassed
+        /// number can be passed without unexpected error.
+        /// 
+        /// # Panics
+        /// 
+        /// The parsing of the leading bytes to a `VarInt` will panic if the number
+        /// is evaluated to greater than 5 bytes in size. This can be caused by
+        /// either the wrong data type being read or the bytes being badly formatted.
+        fn from(bytes: &[u8]) -> Self {
+            VarInt{ bytes: bytes.to_vec(), value: from_varint_bytes(bytes) }
+        }
+    }
+
+    impl VarInt {
+        /// Retrieves the byte size of the `VarInt`.
+        pub fn len(&self) -> i32 {
+            self.bytes.len() as i32
+        }
+
+        /// Returns a slice of this `VarInt`'s byte array representation.
+        pub fn as_bytes(&self) -> &[u8] {
+            &self.bytes
+        }
+
+        /// Returns the numerical equivalent of this `VarInt`.
+        pub fn value(&self) -> i32 {
+            self.value
+        }
+
+        /// Sets the value of this `VarInt` to represent the `value` passed. This function 
+        /// may be used in place of `VarInt::from_i32()` when reinitializing a `VarInt` 
+        /// is not favorable.
+        pub fn set(&mut self, value: i32) {
+            self.value = value;
+            self.bytes = to_varint(self.value);
+        }
+    }
+
+    fn from_varint_bytes(bytes: &[u8]) -> i32 {
+        let mut value = 0;
+        let mut pos = 0;
+
+        const SEGMENT_BITS: i32 = 0x7F;
+        const CONTINUE_BIT: i32 = 0x80;
+
+        for b in bytes.iter() {
+            value |= ((*b as i32) & SEGMENT_BITS) << pos;
+
+            if (*b as i32) & CONTINUE_BIT == 0 {
+                break;
+            }
+
+            pos += 7;
+
+            if pos >= 32 {
+                panic!("VarInt is too big (>5 bytes)");
+            }
+        }
+
+        value
+    }
 
     /// Reads a varint from the front of the buffer and returns
     /// a tuple of the value, and a slice of the buffer after the read bytes.
@@ -210,14 +291,14 @@ impl OfflineConnection {
 
         match self.stream.write(&handshake_packet) {
             Ok(_) => (),
-            Err(msg) => { panic!("Could not send handshake: {}", msg); }
+            Err(msg) => panic!("Could not send handshake: {}", msg)
         }
 
         // https://wiki.vg/Protocol#Status_Request
         let status_request_packet: [u8; 2] = [0x01, 0x00];
         match self.stream.write(&status_request_packet) {
             Ok(_) => (),
-            Err(msg) => { panic!("Could not send status request: {}", msg); }
+            Err(msg) => panic!("Could not send status request: {}", msg)
         }
 
         // TODO get response packet
@@ -255,13 +336,6 @@ impl OfflineConnection {
                 Err(e) => panic!("Could not parse initially: {}", e)
             };
 
-            // SEMANTIC ERROR HERE: Entire buffer is written into string, even though
-            // the buffer doesn't necessarily terminate at its size. Causing repetition,
-            // or alternatively null terminator reads in the case of the buffer and the
-            // bytes read being mismatched. Use the number of bytes read to determine how
-            // many bytes to read from the buffer rather than dumping the buffer.
-            // NOTE: ^ pretty sure I've fixed this. Will keep here in case I run into
-            // bugs again.
             data.push_str(match from_utf8(&buf[..read]) {
                 Ok(s) => s,
                 Err(e) => panic!("Could not parse: {}", e)
@@ -270,7 +344,6 @@ impl OfflineConnection {
             total_read += read;
         }
 
-        //"Unimplemented... :wababte:".to_string()
         StatusResponse { json: data }
     }
 
@@ -309,8 +382,13 @@ impl OfflineConnection {
 fn main() {
     // Serverbound packet structure
     // <length: VarInt> <packet ID: VarInt> <data>
-    // <data> structure
+    // Handshake packet structure
     // <protover: VarInt> <addr: String(255)> <port: ushort> <next_state: VarInt Enum>
+
+    let i = 375;
+    let vi = VarInt::from(i);
+    let n = VarInt::from(vi.as_bytes());
+    println!("{:?}", n.value());
 
     // Hardcoded constants for now
     const DOMAIN: &str = "localhost";
@@ -324,9 +402,9 @@ fn main() {
     );
 
     println!("Connection established. Requesting status...");
-    let _status = connection.status();
+    let status = connection.status();
 
-    //println!("Status: {}", status.json);
+    println!("Status: {}", status.json);
 
     println!("Logging in...");
     connection.login();
