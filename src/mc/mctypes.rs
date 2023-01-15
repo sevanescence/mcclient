@@ -1,3 +1,8 @@
+struct MCString {
+    size: i32,
+    string: String,
+}
+
 /// A `VarInt` is a variable-length data type encoding a two's
 /// complement signed 32-bit integer. A `VarInt` can be anywhere
 /// between 1 and 5 bytes. https://wiki.vg/Protocol#VarInt_and_VarLong

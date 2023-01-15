@@ -1,6 +1,6 @@
-use std::net::TcpStream;
+use std::{net::TcpStream, error::Error, fmt::Display};
 
-const PROTOCOL_VERSION: i32 = 760;
+pub const PROTOCOL_VERSION: i32 = 760;
 
 /// Represents a connection stream to an offline Minecraft server.
 /// <br>
@@ -15,15 +15,13 @@ pub struct OfflineConnection {
 }
 
 impl OfflineConnection {
-    pub fn new(domain: String, port: u16, username: String) -> Self {
+    /// Attempts to establish a TCP connection to a server, returning an `OfflineConnection`
+    /// on success.
+    pub fn connect(domain: String, port: u16, username: String) -> Result<Self, std::io::Error> {
         let ip = format!("{}:{}", domain, port);
+        let stream = TcpStream::connect(ip)?;
 
-        let stream = match TcpStream::connect(ip) {
-            Ok(stream) => stream,
-            Err(msg) => { panic!("Could not connect: {}", msg); }
-        };
-
-        OfflineConnection { stream, username, domain, port }
+        Ok(OfflineConnection{ stream, username, domain, port })
     }
 
     // TODO: Make this capturable via pattern matching by returning a Result.
@@ -70,3 +68,4 @@ impl OfflineConnection {
         // println!("{:?}", packet);
     }
 }
+

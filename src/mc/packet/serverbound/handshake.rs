@@ -2,12 +2,12 @@ use crate::mc::{packet::OutboundPacket, mctypes::to_varint};
 
 #[repr(i32)]
 #[derive(Clone, Copy)]
-enum NextState {
+pub enum NextState {
     STATUS = 1,
     LOGIN = 2
 }
 
-struct Handshake {
+pub struct Handshake {
     pub protocol_version: i32,
     pub server_addr: String,
     pub port: u16,
