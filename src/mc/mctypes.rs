@@ -96,7 +96,7 @@ impl MCType for VarInt {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::<u8>::new();
 
-        bytes.append(&mut (&self.bytes).to_vec());
+        bytes.append(&mut (&self.bytes).clone());
 
         bytes
     }
@@ -176,7 +176,7 @@ fn from_varint_bytes(bytes: &[u8]) -> i32 {
     value
 }
 
-pub fn to_varint(mut value: i32) -> Vec<u8> {
+fn to_varint(mut value: i32) -> Vec<u8> {
     let mut bytes = Vec::<u8>::new();
 
     const SEGMENT_BITS: i32 = 0x7F;
