@@ -1,6 +1,4 @@
-use mc::{packet::{serverbound::handshake::{Handshake, NextState}, serialize_packet}, connection::PROTOCOL_VERSION};
-
-use crate::mc::{mctypes::VarInt, connection::OfflineConnection};
+use crate::mc::connection::OfflineConnection;
 
 mod mc;
 mod tests;
@@ -18,7 +16,7 @@ fn main() {
 
     println!("Connecting...");
     
-    let connection = match OfflineConnection::connect(
+    let _connection = match OfflineConnection::connect(
         DOMAIN.to_owned(), PORT, USERNAME.to_owned()) {
         Ok(conn) => conn,
         Err(msg) => panic!("{}", msg)

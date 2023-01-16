@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::mc::mctypes::VarInt;
+    use crate::mc::{mctypes::{VarInt, MCType}, packet::{serverbound::handshake::{Handshake, NextState}, serialize_packet}, connection::PROTOCOL_VERSION};
 
     #[test]
-    fn test_from_i32_to_varint() {
+    fn from_i32_to_varint() {
         assert_eq!(VarInt::from(0).bytes(), [0]);
         assert_eq!(VarInt::from(1).bytes(), [1]);
         assert_eq!(VarInt::from(2).bytes(), [2]);
@@ -18,7 +18,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_varint_to_i32() {
+    fn from_varint_to_i32() {
         assert_eq!(0, VarInt::from(&[0][..]).value());
         assert_eq!(1, VarInt::from(&[1][..]).value());
         assert_eq!(2, VarInt::from(&[2][..]).value());
@@ -30,5 +30,31 @@ mod tests {
         assert_eq!(2147483647, VarInt::from(&[255, 255, 255, 255, 7][..]).value());
         assert_eq!(-1, VarInt::from(&[255, 255, 255, 255, 15][..]).value());
         assert_eq!(-2147483648, VarInt::from(&[128, 128, 128, 128, 8][..]).value());
+    }
+
+    #[test]
+    fn outbound_packet_serialization() {
+        let handshake = Handshake::new(
+            PROTOCOL_VERSION,
+            "localhost".to_owned(),
+            25565,
+            NextState::STATUS
+        );
+
+        let actual_data_size = VarInt::from(PROTOCOL_VERSION).len() + 10 + 2 + 1;
+        let actual_packet_size = actual_data_size + 1;
+        let packet_id: u8 = 0x00;
+
+        let mut fake_packet_bytes = Vec::<u8>::new();
+        fake_packet_bytes.append(&mut VarInt::from(actual_packet_size).to_bytes());
+        fake_packet_bytes.push(packet_id);
+        fake_packet_bytes.append(&mut VarInt::from(PROTOCOL_VERSION).to_bytes());
+        fake_packet_bytes.append(&mut VarInt::from("localhost".len() as i32).to_bytes());
+        fake_packet_bytes.append(&mut "localhost".as_bytes().to_vec());
+        fake_packet_bytes.append(&mut 25565_u16.to_be_bytes().to_vec());
+        fake_packet_bytes.append(&mut VarInt::from(NextState::STATUS as i32).to_bytes());
+
+
+        assert_eq!(serialize_packet(&handshake), fake_packet_bytes);
     }
 }
