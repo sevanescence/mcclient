@@ -4,17 +4,17 @@ mod tests {
 
     #[test]
     fn test_from_i32_to_varint() {
-        assert_eq!(VarInt::from(0).as_bytes(), [0]);
-        assert_eq!(VarInt::from(1).as_bytes(), [1]);
-        assert_eq!(VarInt::from(2).as_bytes(), [2]);
-        assert_eq!(VarInt::from(127).as_bytes(), [127]);
-        assert_eq!(VarInt::from(128).as_bytes(), [128, 1]);
-        assert_eq!(VarInt::from(255).as_bytes(), [255, 1]);
-        assert_eq!(VarInt::from(25565).as_bytes(), [221, 199, 1]);
-        assert_eq!(VarInt::from(2097151).as_bytes(), [255, 255, 127]);
-        assert_eq!(VarInt::from(2147483647).as_bytes(), [255, 255, 255, 255, 7]);
-        assert_eq!(VarInt::from(-1).as_bytes(), [255, 255, 255, 255, 15]);
-        assert_eq!(VarInt::from(-2147483648).as_bytes(), [128, 128, 128, 128, 8]);
+        assert_eq!(VarInt::from(0).bytes(), [0]);
+        assert_eq!(VarInt::from(1).bytes(), [1]);
+        assert_eq!(VarInt::from(2).bytes(), [2]);
+        assert_eq!(VarInt::from(127).bytes(), [127]);
+        assert_eq!(VarInt::from(128).bytes(), [128, 1]);
+        assert_eq!(VarInt::from(255).bytes(), [255, 1]);
+        assert_eq!(VarInt::from(25565).bytes(), [221, 199, 1]);
+        assert_eq!(VarInt::from(2097151).bytes(), [255, 255, 127]);
+        assert_eq!(VarInt::from(2147483647).bytes(), [255, 255, 255, 255, 7]);
+        assert_eq!(VarInt::from(-1).bytes(), [255, 255, 255, 255, 15]);
+        assert_eq!(VarInt::from(-2147483648).bytes(), [128, 128, 128, 128, 8]);
     }
 
     #[test]

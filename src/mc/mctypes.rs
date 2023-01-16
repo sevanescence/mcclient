@@ -1,6 +1,58 @@
-struct MCString {
-    size: i32,
+pub trait MCType {
+    /// Copies the data of this `MCType` and encodes it according to its
+    /// Minecraft protocol packet structure.
+    fn to_bytes(&self) -> Vec<u8>;
+    /// Gets the bytesize of the serialized version this `MCType`.
+    /// # Examples
+    /// ```
+    /// let string = MCString::from("Hello!".to_owned());
+    /// let size = string.size(); 
+    /// // ^ returns length of "Hello!" + bytesize of `VarInt` size.
+    /// // i.e., 6 + [6].len() = 7
+    /// ```
+    fn size(&self) -> i32;
+}
+
+#[allow(dead_code)]
+pub struct MCString {
+    size: VarInt,
     string: String,
+}
+
+impl From<String> for MCString {
+    /// Creates a Minecraft string from a `String`.
+    /// # Panics
+    /// This function will panic if the size of the String cannot
+    /// be parsed to an `i32`.
+    fn from(value: String) -> Self {
+        let size: i32 = match value.len().try_into() {
+            Ok(num) => num,
+            Err(msg) => panic!("{}", msg)
+        };
+        MCString { size: VarInt::from(size), string: value }
+    }
+}
+
+impl MCType for MCString {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::<u8>::new();
+
+        bytes.append(&mut self.size.to_bytes());
+        bytes.append(&mut self.string.as_bytes().to_vec());
+
+        bytes
+    }
+
+    fn size(&self) -> i32 {
+        self.size.len() + TryInto::<i32>::try_into(self.string.len()).unwrap()
+    }
+}
+
+#[allow(dead_code)]
+impl MCString {
+    pub fn len(&self) -> i32 {
+        self.size.len()
+    }
 }
 
 /// A `VarInt` is a variable-length data type encoding a two's
@@ -10,6 +62,7 @@ struct MCString {
 /// This structure is meant purely for data I/O and should not be used
 /// to perform any sort of arithmetic.
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct VarInt {
     bytes: Vec<u8>,
     value: i32
@@ -39,6 +92,21 @@ impl From<&[u8]> for VarInt {
     }
 }
 
+impl MCType for VarInt {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::<u8>::new();
+
+        bytes.append(&mut (&self.bytes).to_vec());
+
+        bytes
+    }
+
+    fn size(&self) -> i32 {
+        self.bytes.len().try_into().unwrap()
+    }
+}
+
+#[allow(dead_code)]
 impl VarInt {
     /// Creates a `VarInt` representation of `value`.
     pub fn from_i32(value: i32) -> Self {
@@ -66,7 +134,7 @@ impl VarInt {
     }
 
     /// Returns a slice of this `VarInt`'s byte array representation.
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
 
