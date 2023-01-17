@@ -96,7 +96,7 @@ impl MCType for VarInt {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::<u8>::new();
 
-        bytes.append(&mut (&self.bytes).clone());
+        bytes.append(&mut self.bytes.clone());
 
         bytes
     }

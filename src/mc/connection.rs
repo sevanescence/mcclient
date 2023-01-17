@@ -36,11 +36,11 @@ impl OfflineConnection {
         Ok(OfflineConnection{ stream, username, domain, port })
     }
 
-    pub fn status(&mut self) {
+    pub fn status(&self) {
         
     }
 
-    pub fn login(&mut self) {
+    pub fn login(&self) {
         const LOGIN_START_PACKET_ID: i32 = 0x00;
     }
 }
