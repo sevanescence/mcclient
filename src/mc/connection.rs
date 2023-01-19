@@ -1,5 +1,7 @@
 use std::{net::TcpStream};
 
+use super::{packet::clientbound::status_response::StatusResponse, mctypes::MCString};
+
 #[allow(dead_code)]
 pub const PROTOCOL_VERSION: i32 = 760;
 
@@ -36,12 +38,11 @@ impl OfflineConnection {
         Ok(OfflineConnection{ stream, username, domain, port })
     }
 
-    pub fn status(&self) {
-        
+    pub fn status(&self) -> Result<StatusResponse, std::io::Error> {
+        Ok(StatusResponse{ json_response: MCString::from("Unimplemented") })
     }
 
     pub fn login(&self) {
         const LOGIN_START_PACKET_ID: i32 = 0x00;
     }
 }
-

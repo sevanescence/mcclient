@@ -17,18 +17,6 @@ pub struct Handshake {
     pub next_state: NextState
 }
 
-#[allow(dead_code)]
-impl Handshake {
-    pub fn new(protocol_version: i32, server_addr: String, port: u16, next_state: NextState) -> Self {
-        Handshake { 
-            protocol_version: VarInt::from_i32(protocol_version), 
-            server_addr: MCString::from(server_addr), 
-            port, 
-            next_state
-        }
-    }
-}
-
 impl OutboundPacket for Handshake {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::<u8>::new();

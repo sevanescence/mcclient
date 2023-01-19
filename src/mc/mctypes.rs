@@ -33,6 +33,20 @@ impl From<String> for MCString {
     }
 }
 
+impl From<&str> for MCString {
+    /// Creates a Minecraft string from a `&str`.
+    /// # Panics
+    /// This function will panic if the size of the String cannot
+    /// be parsed to an `i32`.
+    fn from(value: &str) -> Self {
+        let size: i32 = match value.len().try_into() {
+            Ok(num) => num,
+            Err(msg) => panic!("{}", msg)
+        };
+        MCString { size: VarInt::from(size), string: value.to_owned() }
+    }
+}
+
 impl MCType for MCString {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::<u8>::new();

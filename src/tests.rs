@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::mc::{mctypes::{VarInt, MCType}, packet::{serverbound::handshake::{Handshake, NextState}, serialize_packet}, connection::PROTOCOL_VERSION};
+    use crate::mc::{mctypes::{VarInt, MCType, MCString}, packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, serialize_packet}, connection::PROTOCOL_VERSION};
 
     #[test]
     fn from_i32_to_varint() {
@@ -34,12 +34,12 @@ mod tests {
 
     #[test]
     fn outbound_packet_serialization() {
-        let handshake = Handshake::new(
-            PROTOCOL_VERSION,
-            "localhost".to_owned(),
-            25565,
-            NextState::STATUS
-        );
+        let handshake = Handshake {
+            protocol_version: VarInt::from(PROTOCOL_VERSION),
+            server_addr: MCString::from("localhost"),
+            port: 25565,
+            next_state: NextState::STATUS
+        };
 
         let actual_data_size = VarInt::from(PROTOCOL_VERSION).len() + 10 + 2 + 1;
         let actual_packet_size = actual_data_size + 1;
@@ -56,5 +56,12 @@ mod tests {
 
 
         assert_eq!(serialize_packet(&handshake), fake_packet_bytes);
+    }
+
+    #[test]
+    fn status_request_packet_serialization() {
+        let status_request = StatusRequest;
+
+        assert_eq!(serialize_packet(&status_request), vec![0x01, 0x00]);
     }
 }
