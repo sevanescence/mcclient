@@ -10,8 +10,8 @@ fn main() {
     // <protover: VarInt> <addr: String(255)> <port: ushort> <next_state: VarInt Enum>
 
     // Hardcoded constants for now
-    const DOMAIN: &str = "okbuddyholotard.serveminecraft.net";
-    const PORT: u16 = 8081;
+    const DOMAIN: &str = "localhost";
+    const PORT: u16 = 25565;
     const USERNAME: &str = "MakotoII";
 
     println!("Connecting...");
