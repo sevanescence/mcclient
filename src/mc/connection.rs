@@ -46,4 +46,9 @@ impl OfflineConnection {
     pub fn login(&self) {
         const LOGIN_START_PACKET_ID: i32 = 0x00;
     }
+
+    /// Retrieves a copy of the username used to connect to an offline server.
+    pub fn username(&self) -> String {
+        self.username.clone()
+    }
 }
