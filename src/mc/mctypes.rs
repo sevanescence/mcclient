@@ -5,6 +5,8 @@ pub trait MCType {
     /// Gets the bytesize of the serialized version this `MCType`.
     /// # Examples
     /// ```
+    /// use crate::mcclient::mc::mctypes::MCString;
+    /// use crate::mcclient::mc::mctypes::MCType;
     /// let string = MCString::from("Hello!".to_owned());
     /// let size = string.size(); 
     /// // ^ returns length of "Hello!" + bytesize of `VarInt` size.

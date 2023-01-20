@@ -12,6 +12,7 @@ pub const PROTOCOL_VERSION: i32 = 760;
 /// the object.
 /// # Examples
 /// ```
+/// use mcclient::mc::connection::OfflineConnection;
 /// const DOMAIN: &str = "localhost";
 /// const PORT: u16 = 25565;
 /// const USERNAME: &str = "Dinnerbone";
