@@ -1,7 +1,5 @@
 use std::io;
 
-use self::serverbound::status_request::StatusRequest;
-
 use super::mctypes::{VarInt, MCType};
 
 pub mod serverbound;

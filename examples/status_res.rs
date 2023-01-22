@@ -1,6 +1,6 @@
 use std::{net::TcpStream, io::{self, Write, Read}, collections::VecDeque};
 
-use mcclient::mc::{packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, serialize_packet}, mctypes::VarInt};
+use mcclient::mc::{packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, serialize_packet}, mctypes::VarInt};
 
 extern crate mcclient;
 

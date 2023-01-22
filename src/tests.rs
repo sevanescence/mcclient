@@ -33,6 +33,17 @@ mod tests {
     }
 
     #[test]
+    fn from_bytes_to_varint() {
+        assert_eq!(&[0][..], VarInt::from_bytes(&[0, 0][..]).bytes());
+        assert_eq!(&[1][..], VarInt::from_bytes(&[1, 0][..]).bytes());
+        assert_eq!(&[2][..], VarInt::from_bytes(&[2, 0][..]).bytes());
+        assert_eq!(&[127][..], VarInt::from_bytes(&[127, 0][..]).bytes());
+        assert_eq!(&[128, 1][..], VarInt::from_bytes(&[128, 1, 0][..]).bytes());
+        assert_eq!(&[255, 1][..], VarInt::from_bytes(&[255, 1, 0][..]).bytes());
+        assert_eq!(&[221, 199, 1][..], VarInt::from_bytes(&[221, 199, 1, 0][..]).bytes());
+    }
+
+    #[test]
     fn outbound_packet_serialization() {
         let handshake = Handshake {
             protocol_version: VarInt::from(PROTOCOL_VERSION),
