@@ -180,13 +180,13 @@ fn from_varint_bytes(bytes: &[u8]) -> (i32, &[u8]) {
 
     for b in bytes.iter() {
         value |= ((*b as i32) & SEGMENT_BITS) << pos;
+        end_idx += 1;
 
         if (*b as i32) & CONTINUE_BIT == 0 {
             break;
         }
 
         pos += 7;
-        end_idx += 1;
 
         if pos >= 32 {
             panic!("VarInt is too big (>5 bytes)");

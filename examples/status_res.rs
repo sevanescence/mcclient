@@ -1,4 +1,4 @@
-use std::{net::TcpStream, io::{self, Write, Read}};
+use std::{net::TcpStream, io::{self, Write, Read}, collections::VecDeque};
 
 use mcclient::mc::{packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, serialize_packet}, mctypes::VarInt};
 
@@ -38,9 +38,15 @@ fn main() -> Result<(), io::Error> {
     }
     println!("Data read.");
 
-    let packet_size = VarInt::from_bytes(&received);
-    println!("{}", packet_size.value());
-    println!("{:?}", packet_size.bytes());
+    let mut received: VecDeque<u8> = received.into();
+
+    let packet_size = VarInt::from_bytes(received.as_slices().0);
+    for _ in 0..packet_size.len() {
+        received.pop_front();
+    }
+    println!("{:?}", received);
+    println!("{}, {}, {:?}", received.len(), packet_size.value(), packet_size.bytes());
+    println!("{:?}", VarInt::from(packet_size.value()).bytes());
     // let str_size = VarInt::from_bytes(&received);
     // for _ in 0..str_size.len() {
     //     pop_remove(&mut received, 0);
