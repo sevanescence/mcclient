@@ -54,7 +54,6 @@ mod tests {
         fake_packet_bytes.append(&mut 25565_u16.to_be_bytes().to_vec());
         fake_packet_bytes.append(&mut VarInt::from(NextState::STATUS as i32).to_bytes());
 
-
         assert_eq!(serialize_packet(&handshake), fake_packet_bytes);
     }
 

@@ -73,7 +73,7 @@ impl MCString {
 
 /// A `VarInt` is a variable-length data type encoding a two's
 /// complement signed 32-bit integer. A `VarInt` can be anywhere
-/// between 1 and 5 bytes. https://wiki.vg/Protocol#VarInt_and_VarLong
+/// between 1 and 5 bytes. <https://wiki.vg/Protocol#VarInt_and_VarLong>
 /// <br>
 /// This structure is meant purely for data I/O and should not be used
 /// to perform any sort of arithmetic.
@@ -104,7 +104,8 @@ impl From<&[u8]> for VarInt {
     /// is evaluated to greater than 5 bytes in size. This can be caused by
     /// either the wrong data type being read or the bytes being badly formatted.
     fn from(bytes: &[u8]) -> Self {
-        VarInt{ bytes: bytes.to_vec(), value: from_varint_bytes(bytes) }
+        let (val, slice) = from_varint_bytes(bytes);
+        VarInt{ bytes: slice.to_vec(), value: val }
     }
 }
 
@@ -141,7 +142,8 @@ impl VarInt {
     /// is evaluated to greater than 5 bytes in size. This can be caused by
     /// either the wrong data type being read or the bytes being badly formatted.
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        VarInt{ bytes: bytes.to_vec(), value: from_varint_bytes(bytes) }
+        let (val, slice) = from_varint_bytes(bytes);
+        VarInt{ bytes: slice.to_vec(), value: val }
     }
 
     /// Retrieves the byte size of the `VarInt`.
@@ -168,9 +170,10 @@ impl VarInt {
     }
 }
 
-fn from_varint_bytes(bytes: &[u8]) -> i32 {
+fn from_varint_bytes(bytes: &[u8]) -> (i32, &[u8]) {
     let mut value = 0;
     let mut pos = 0;
+    let mut end_idx = 0;
 
     const SEGMENT_BITS: i32 = 0x7F;
     const CONTINUE_BIT: i32 = 0x80;
@@ -183,13 +186,14 @@ fn from_varint_bytes(bytes: &[u8]) -> i32 {
         }
 
         pos += 7;
+        end_idx += 1;
 
         if pos >= 32 {
             panic!("VarInt is too big (>5 bytes)");
         }
     }
 
-    value
+    (value, &bytes[..end_idx])
 }
 
 fn to_varint(mut value: i32) -> Vec<u8> {
