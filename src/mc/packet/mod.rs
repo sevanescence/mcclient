@@ -21,7 +21,7 @@ pub trait OutboundPacket {
 /// Interfaced clientbound packets. Struct implementing this trait
 /// are expected to be mcproto-compliant packets which are parsed
 /// from an array of bytes retrieved from a server.
-pub trait InboundPacket {
+pub trait InboundPacket: Sized {
     /// Attempts to deserialize the given bytes into the implied packet
     /// type. Note: Passing bytes that are not formatted as per the
     /// Minecraft protocol is undefined.
@@ -34,7 +34,11 @@ pub trait InboundPacket {
     /// <br> <br>
     /// If the inbound packet data is well-formatted and can be parsed
     /// by the implementing structure, a `Box<Self>` is returned.
-    fn from_bytes(bytes: &[u8]) -> Result<Box<Self>, io::Error>;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
+
+    /// Gets the size of this packet as a `VarInt`
+    fn packet_size(&self) -> VarInt;
+
     /// Retrieves the ID of this inbound packet.
     fn packet_id(&self) -> i32;
 }
@@ -51,4 +55,18 @@ pub fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
     serialized_packet_bytes.append(&mut data.to_bytes());
 
     serialized_packet_bytes
+}
+
+pub struct MCPacketHeader{ size: VarInt, id: VarInt }
+
+/// Attemps to parse a packet header from bytes, consuming the `VarInt` elements of
+/// the `Vec<u8>` passed.
+/// # Errors
+/// This function may return an `InvalidData` error if the `VarInt` bytes cannot be
+/// properly parsed.
+pub fn read_packet_header(bytes: &mut Vec<u8>) -> Result<MCPacketHeader, io::Error> {
+    let packet_size = VarInt::from_vec_front(bytes)?;
+    let packet_id = VarInt::from_vec_front(bytes)?;
+
+    Ok(MCPacketHeader{ size: packet_size, id: packet_id })
 }

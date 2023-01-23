@@ -1,3 +1,5 @@
+use std::io;
+
 pub trait MCType {
     /// Copies the data of this `MCType` and encodes it according to its
     /// Minecraft protocol packet structure.
@@ -19,6 +21,34 @@ pub trait MCType {
 pub struct MCString {
     size: VarInt,
     string: String,
+}
+
+#[allow(dead_code)]
+impl MCString {
+    /// Attempts to create a `MCString` from a set of bytes, which should be
+    /// lead with a `VarInt` descriptor followed by a UTF-8 string.
+    /// # Panics
+    /// This function will panic if the constituent string cannot properly be
+    /// parsed as 
+    /// # Errors
+    /// This function will error in the instance that the `VarInt` header cannot
+    /// be parsed.
+    pub fn from_bytes(mut bytes: &[u8]) -> Result<Self, io::Error> {
+        let size = VarInt::from_bytes(bytes)?;
+        bytes = &bytes[size.len() as usize..];
+
+        let string_res = String::from_utf8(bytes.to_vec());
+        if string_res.is_err() {
+            Err(io::Error::new(io::ErrorKind::InvalidData, string_res.err().unwrap()))
+        } else {
+            let string = string_res.unwrap();
+            Ok(MCString { size, string })
+        }
+    }
+
+    pub fn string(&self) -> &String {
+        &self.string
+    }
 }
 
 impl From<String> for MCString {
@@ -104,7 +134,10 @@ impl From<&[u8]> for VarInt {
     /// is evaluated to greater than 5 bytes in size. This can be caused by
     /// either the wrong data type being read or the bytes being badly formatted.
     fn from(bytes: &[u8]) -> Self {
-        let (val, slice) = from_varint_bytes(bytes);
+        let (val, slice) = match from_varint_bytes(bytes) {
+            Ok(t) => t,
+            Err(msg) => panic!("{}", msg)
+        };
         VarInt{ bytes: slice.to_vec(), value: val }
     }
 }
@@ -125,6 +158,17 @@ impl MCType for VarInt {
 
 #[allow(dead_code)]
 impl VarInt {
+    /// Creats a `VarInt` from a slice of a `Vec<u8>` `vec` and consumes the
+    /// front of the `Vec<u8>` that represents the constituent VarInt bytes.
+    /// # Errors
+    /// This function may error if the head of the vector cannot represent a
+    /// `VarInt` type.
+    pub fn from_vec_front(vec: &mut Vec<u8>) -> Result<Self, io::Error> {
+        let v = VarInt::from_bytes(vec.as_slice())?;
+        vec.drain(0..v.len() as usize);
+        Ok(v)
+    }
+
     /// Creates a `VarInt` representation of `value`.
     pub fn from_i32(value: i32) -> Self {
         VarInt{ bytes: to_varint(value), value }
@@ -136,14 +180,14 @@ impl VarInt {
     /// the size of a `VarInt` is variadic, a slice larger than the encompassed
     /// number can be passed without unexpected error.
     /// 
-    /// # Panics
+    /// # Errors
     /// 
-    /// The parsing of the leading bytes to a `VarInt` will panic if the number
-    /// is evaluated to greater than 5 bytes in size. This can be caused by
-    /// either the wrong data type being read or the bytes being badly formatted.
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        let (val, slice) = from_varint_bytes(bytes);
-        VarInt{ bytes: slice.to_vec(), value: val }
+    /// The parsing of the leading bytes to a `VarInt` will return an `InvalidData` error
+    /// if the number is evaluated to greater than 5 bytes in size. This can be caused 
+    /// by either the wrong data type being read or the bytes being badly formatted.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
+        let (val, slice) = from_varint_bytes(bytes)?;
+        Ok(VarInt{ bytes: slice.to_vec(), value: val })
     }
 
     /// Retrieves the byte size of the `VarInt`.
@@ -170,7 +214,7 @@ impl VarInt {
     }
 }
 
-fn from_varint_bytes(bytes: &[u8]) -> (i32, &[u8]) {
+fn from_varint_bytes(bytes: &[u8]) -> Result<(i32, &[u8]), io::Error> {
     let mut value = 0;
     let mut pos = 0;
     let mut end_idx = 0;
@@ -189,11 +233,14 @@ fn from_varint_bytes(bytes: &[u8]) -> (i32, &[u8]) {
         pos += 7;
 
         if pos >= 32 {
-            panic!("VarInt is too big (>5 bytes)");
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "VarInt descriptor exceeds >5 bytes"
+            ));
         }
     }
 
-    (value, &bytes[..end_idx])
+    Ok((value, &bytes[..end_idx]))
 }
 
 fn to_varint(mut value: i32) -> Vec<u8> {
