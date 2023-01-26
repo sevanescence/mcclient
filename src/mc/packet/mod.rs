@@ -57,7 +57,7 @@ pub fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
     serialized_packet_bytes
 }
 
-pub struct MCPacketHeader{ size: VarInt, id: VarInt }
+pub struct MCPacketHeader{ pub size: VarInt, pub id: VarInt }
 
 /// Attemps to parse a packet header from bytes, consuming the `VarInt` elements of
 /// the `Vec<u8>` passed.
