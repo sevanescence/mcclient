@@ -36,6 +36,8 @@ pub trait InboundPacket: Sized {
     /// by the implementing structure, a `Box<Self>` is returned.
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
 
+    fn from_data(packet: &MCPacket) -> Result<Self, io::Error>;
+
     /// Gets the size of this packet as a `VarInt`
     fn packet_size(&self) -> VarInt;
 
@@ -69,4 +71,19 @@ pub fn read_packet_header(bytes: &mut Vec<u8>) -> Result<MCPacketHeader, io::Err
     let packet_id = VarInt::from_vec_front(bytes)?;
 
     Ok(MCPacketHeader{ size: packet_size, id: packet_id })
+}
+
+pub struct MCPacket {
+    pub header: MCPacketHeader,
+    pub data: Vec<u8>,
+}
+
+impl MCPacket {
+    /// Constructs a Minecraft packet object from a set of bytes, consuming the `bytes` passed.
+    /// # Errors
+    /// This function will return `io::Error` if the bytes cannot be properly parsed.
+    pub fn from_bytes(bytes: &mut Vec<u8>) -> Result<MCPacket, io::Error> {
+        let header = read_packet_header(bytes)?;
+        Ok(MCPacket { header, data: std::mem::take(bytes) })
+    }
 }

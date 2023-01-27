@@ -25,6 +25,17 @@ impl InboundPacket for StatusResponse {
         })
     }
 
+    fn from_data(packet: &crate::mc::packet::MCPacket) -> Result<Self, io::Error> {
+        if packet.header.id.value() != STATUS_RES_PACKET_ID {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid packet ID."));
+        }
+
+        Ok(StatusResponse{
+            packet_size: packet.header.size.clone(),
+            json_response: MCString::from_bytes(&packet.data)?
+        })
+    }
+
     fn packet_size(&self) -> VarInt {
         self.packet_size.clone()
     }
