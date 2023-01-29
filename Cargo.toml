@@ -7,3 +7,9 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
+
+[dependencies.uuid]
+version = "1.2.2"
+features = [
+    "v4", # To generate random UUIDs
+]

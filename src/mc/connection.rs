@@ -81,8 +81,8 @@ impl OfflineConnection {
 
 #[allow(dead_code)]
 pub struct MinecraftStream {
-    writer: BufWriter<TcpStream>,
-    reader: BufReader<TcpStream>,
+    pub writer: BufWriter<TcpStream>,
+    pub reader: BufReader<TcpStream>,
 }
 
 #[allow(dead_code)]
@@ -110,9 +110,9 @@ impl MinecraftStream {
     /// An `io::Error` of any kind will be returned if the packet cannot be sent or the
     /// stream cannot be flushed.
     pub fn send(&mut self, packet: &dyn OutboundPacket) -> Result<(), io::Error> {
-        let res = self.writer.write_all(&serialize_packet(packet));
+        self.writer.write_all(&serialize_packet(packet))?;
         self.writer.flush()?;
-        Ok(res?)
+        Ok(())
     }
 
     /// Flushes the outbound stream.
