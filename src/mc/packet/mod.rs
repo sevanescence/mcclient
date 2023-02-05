@@ -38,9 +38,6 @@ pub trait InboundPacket: Sized {
 
     fn from_data(packet: &MCPacket) -> Result<Self, io::Error>;
 
-    /// Gets the size of this packet as a `VarInt`
-    fn packet_size(&self) -> VarInt;
-
     /// Retrieves the ID of this inbound packet.
     fn packet_id(&self) -> i32;
 }
@@ -84,6 +81,6 @@ impl MCPacket {
     /// This function will return `io::Error` if the bytes cannot be properly parsed.
     pub fn from_bytes(bytes: &mut Vec<u8>) -> Result<MCPacket, io::Error> {
         let header = read_packet_header(bytes)?;
-        Ok(MCPacket { header, data: std::mem::take(bytes) })
+        Ok(MCPacket{ header, data: std::mem::take(bytes) })
     }
 }

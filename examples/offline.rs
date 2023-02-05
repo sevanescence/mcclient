@@ -1,19 +1,19 @@
 extern crate mcclient;
 
-use mcclient::mc::connection::OfflineConnection;
+use std::io;
 
-fn main() {
+use mcclient::mc::connection::{OfflineConnection, MinecraftStream};
+
+fn main() -> Result<(), io::Error> {
     const DOMAIN: &str = "localhost";
     const PORT: u16 = 25565;
     const USERNAME: &str = "MonkeyDLuffy";
 
     println!("Connecting...");
     
-    let _connection = match OfflineConnection::connect(
-        DOMAIN.to_owned(), PORT, USERNAME.to_owned()) {
-        Ok(conn) => conn,
-        Err(msg) => panic!("{}", msg)
-    };
+    let connection = MinecraftStream::connect(format!("{}:{}", DOMAIN, PORT))?;
     
     println!("Connection successful. Requesting status...");
+
+    Ok(())
 }

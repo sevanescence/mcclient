@@ -5,7 +5,6 @@ use crate::mc::{mctypes::{MCString, VarInt}, packet::{InboundPacket, read_packet
 const STATUS_RES_PACKET_ID: i32 = 0x00;
 
 pub struct StatusResponse {
-    packet_size: VarInt,
     pub json_response: MCString
 }
 
@@ -20,7 +19,6 @@ impl InboundPacket for StatusResponse {
         }
         
         Ok(StatusResponse{ 
-            packet_size: packet_header.size,
             json_response: MCString::from_bytes(&bytes)?
         })
     }
@@ -31,13 +29,8 @@ impl InboundPacket for StatusResponse {
         }
 
         Ok(StatusResponse{
-            packet_size: packet.header.size.clone(),
             json_response: MCString::from_bytes(&packet.data)?
         })
-    }
-
-    fn packet_size(&self) -> VarInt {
-        self.packet_size.clone()
     }
 
     fn packet_id(&self) -> i32 {
