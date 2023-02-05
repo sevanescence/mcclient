@@ -1,11 +1,8 @@
 use std::{net::{TcpStream, ToSocketAddrs}, io::{self, Write, Read, BufWriter, BufReader}};
 
-use crate::mc::packet::InboundPacket;
+use crate::mc::{packet::InboundPacket, PROTOCOL_VERSION};
 
 use super::{packet::{clientbound::status_response::StatusResponse, serialize_packet, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, MCPacket}, mctypes::VarInt};
-
-#[allow(dead_code)]
-pub const PROTOCOL_VERSION: i32 = 760;
 
 /// Represents a connection stream to an offline Minecraft server.
 /// <br>
@@ -31,7 +28,6 @@ pub struct OfflineConnection {
 }
 
 #[allow(dead_code)]
-#[deprecated]
 impl OfflineConnection {
     /// Attempts to establish a TCP connection to a server, returning an `OfflineConnection`
     /// on success.

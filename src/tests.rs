@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::mc::{mctypes::{VarInt, MCType, MCString}, packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, serialize_packet}, connection::PROTOCOL_VERSION};
+    use crate::mc::{mctypes::{VarInt, MCString, MCType}, packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, serialize_packet}, PROTOCOL_VERSION};
+
 
     #[test]
     fn from_i32_to_varint() {
