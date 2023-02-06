@@ -1,16 +1,17 @@
 use std::{net::{TcpStream, ToSocketAddrs}, io::{self, Write, Read, BufWriter, BufReader}};
 
-use crate::mc::{packet::InboundPacket, PROTOCOL_VERSION};
-
 use super::{packet::{clientbound::{status_response::StatusResponse, login_success::LoginSuccess, ping_response::PingResponse}, serialize_packet, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, MCPacket}, mctypes::VarInt};
 
-#[allow(dead_code)]
+/// Describes a two-way TCP connection to a Minecraft server. The internal
+/// buffer bytes are handled by a high-level serdes which encapsulates the
+/// Minecraft packets. No byte manipulation is necessary to send packets
+/// using a MinecraftStream.
 pub struct MinecraftStream {
     writer: BufWriter<TcpStream>,
     reader: BufReader<TcpStream>,
 }
 
-#[allow(dead_code)]
+
 impl MinecraftStream {
     pub fn connect<T: ToSocketAddrs>(addr: T) -> Result<Self, io::Error> {
         let stream = TcpStream::connect(addr)?;
@@ -70,11 +71,51 @@ impl MinecraftStream {
 
 // type AnyStringType = dyn AsRef<str>;
 
+/// Describes a connection to a Minecraft server. The stream is a `MinecraftStream` which handles
+/// packet serdes, and the domain, port, and username are inferred when they are relevant. For instance,
+/// the domain and port are known when the initial connection attempt is made, and the username will
+/// be inferred once a user attempts to login.
+/// # Example
+/// ```
+/// let mut connection = OfflineConnection::connect("localhost", 25565).expect("Could not connect");
+/// connection.username(); // -> Returns `None`
+/// let login_success = connection.login("Makoto").expect("Could not log in");
+/// connection.username(); // -> Returns `Some` of String "Makoto"
+/// ```
 pub trait Connection: Sized {
-    fn connect<T: AsRef<str>>(domain: &T, port: u16, username: &T) -> Result<Self, io::Error>;
+    /// Attempts to connect to a Minecraft server. On success, the `Connection` is returned.
+    /// # Errors
+    /// This function will return an error if the connection cannot be established.
+    fn connect<T: Into<String> + Clone>(domain: T, port: u16) -> Result<Self, io::Error>;
+    /// Attempts to fetch a status report of the server.
+    /// # Errors
+    /// This function will return an error if the connection cannot be established. It can be
+    /// inferred that failure to receive this packet means the connection cannot continue.
     fn status(&mut self) -> Result<StatusResponse, io::Error>;
+    /// Attempts to ping the recipient server.
+    /// # Errors
+    /// This function will return an error if the ping fails. It can be inferred that failure
+    /// to receive this packet means the connection cannot continue.
     fn ping(&mut self) -> Result<PingResponse, io::Error>;
-    fn login(&mut self) -> Result<LoginSuccess, io::Error>;
+    /// Attempts to log into the recipient server. The steps for this varies by connection type.
+    /// For offline connections, a Login Request packet is followed immediately by a Login Success,
+    /// while an online connection may require Mojang server authentication, and in newer versions,
+    /// encryption authentication for Microsoft clients.
+    /// # Errors
+    /// This function will return an error if the login attempt fails. It can be inferred that
+    /// failure to receive this packet means the connection cannot continue.
+    fn login<T: Into<String> + Clone>(&mut self, username: T) -> Result<LoginSuccess, io::Error>;
+
+    /// Gets the stream managed by this connection, which is used to send and receive packets.
+    fn sock(&mut self) -> &mut MinecraftStream; 
+
+    /// Gets the domain of the connection. This retrieves the domain passed to the initial connection
+    /// attempt, not the endpoint IP resolved by the underlying TCP stream object.
+    fn domain(&self) -> &str;
+    /// Gets the port of the connection.
+    fn port(&self) -> u16;
+    /// Gets the username of the connection if it is set. This is set by a `login` invocation.
+    fn username(&self) -> &Option<String>;
 }
 
 /// Represents a connection stream to an offline Minecraft server.
@@ -82,39 +123,48 @@ pub trait Connection: Sized {
 /// The handshake packet is sent when either a status or login request
 /// is made. The stream itself attempts to open upon construction of
 /// the object.
-/// # Examples
-/// ```
-/// use mcclient::mc::connection::OfflineConnection;
-/// const DOMAIN: &str = "localhost";
-/// const PORT: u16 = 25565;
-/// const USERNAME: &str = "Dinnerbone";
-/// let connection = OfflineConnection::connect(
-///     DOMAIN.to_owned(), PORT, USERNAME.to_owned()
-/// ).expect("Could not connect!");
-/// ```
 #[allow(unused)]
 pub struct OfflineConnection {
-    stream: TcpStream,
-    username: String,
+    stream: MinecraftStream,
     domain: String,
-    port: u16
+    port: u16,
+    username: Option<String>
 }
 
 #[allow(unused)]
 impl Connection for OfflineConnection {
-    fn connect<T: AsRef<str>>(domain: &T, port: u16, username: &T) -> Result<Self, io::Error> {
-        Err(io::Error::new(io::ErrorKind::InvalidData, "Unimplemented."))
+    fn connect<T: Into<String> + Clone>(domain: T, port: u16) -> Result<Self, io::Error> {
+        let mut stream = MinecraftStream::connect(format!("{}:{}", domain.clone().into(), port))?;
+        
+        Ok(OfflineConnection { stream, domain: domain.into(), port, username: None })
     }
 
     fn status(&mut self) -> Result<StatusResponse, io::Error> {
-        Ok(StatusResponse{ json_response: "{\"message\":\"Unimplemented\"}".into() })
+        Ok(StatusResponse { json_response: "{\"message\":\"Unimplemented\"}".into() })
     }
 
     fn ping(&mut self) -> Result<PingResponse, io::Error> {
         Ok(PingResponse {  })
     }
 
-    fn login(&mut self) -> Result<LoginSuccess, io::Error> {
+    fn login<T: Into<String> + Clone>(&mut self, username: T) -> Result<LoginSuccess, io::Error> {
+        self.username = Some(username.into());
         Ok(LoginSuccess {  })
+    }
+
+    fn sock(&mut self) -> &mut MinecraftStream {
+        &mut self.stream
+    }
+
+    fn domain(&self) -> &str {
+        &self.domain
+    }
+
+    fn port(&self) -> u16 {
+        self.port
+    }
+
+    fn username(&self) -> &Option<String> {
+        &self.username
     }
 }

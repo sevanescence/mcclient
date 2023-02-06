@@ -34,6 +34,7 @@ pub trait InboundPacket: Sized {
     /// <br> <br>
     /// If the inbound packet data is well-formatted and can be parsed
     /// by the implementing structure, a `Box<Self>` is returned.
+    #[deprecated]
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
 
     fn from_data(packet: &MCPacket) -> Result<Self, io::Error>;

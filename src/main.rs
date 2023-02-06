@@ -10,7 +10,7 @@ fn main() {
 
     println!("Connecting...");
 
-    let mut connection = OfflineConnection::connect(&DOMAIN, PORT, &USERNAME)
+    let mut connection = OfflineConnection::connect(DOMAIN, PORT)
         .expect("Could not connect.");
     
     println!("Connection successful. Requesting status...");
