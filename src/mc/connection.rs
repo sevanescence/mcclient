@@ -1,6 +1,6 @@
 use std::{net::{TcpStream, ToSocketAddrs}, io::{self, Write, Read, BufWriter, BufReader}};
 
-use super::{packet::{clientbound::{status_response::StatusResponse, login_success::LoginSuccess, ping_response::PingResponse}, serialize_packet, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, MCPacket}, mctypes::VarInt};
+use super::{packet::{clientbound::{status_response::StatusResponse, login_success::LoginSuccess, ping_response::PingResponse}, serialize_packet, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, MCPacket, InboundPacket}, mctypes::VarInt, PROTOCOL_VERSION};
 
 /// Describes a two-way TCP connection to a Minecraft server. The internal
 /// buffer bytes are handled by a high-level serdes which encapsulates the
@@ -140,7 +140,23 @@ impl Connection for OfflineConnection {
     }
 
     fn status(&mut self) -> Result<StatusResponse, io::Error> {
-        Ok(StatusResponse { json_response: "{\"message\":\"Unimplemented\"}".into() })
+        let handshake = Handshake {
+            protocol_version: PROTOCOL_VERSION.into(),
+            server_addr: self.domain.clone().into(), // TODO change to String type after MCType refactor
+            port: self.port,
+            next_state: NextState::STATUS
+        };
+        
+        self.stream.send(&handshake)?;
+        self.stream.send(&StatusRequest)?;
+
+        let inbound = self.stream.read()?;
+        if inbound.header.id.value() != 0x00 {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Bad packet ID."));
+        }
+        let response = StatusResponse::from_data(&inbound)?;
+
+        Ok(response)
     }
 
     fn ping(&mut self) -> Result<PingResponse, io::Error> {
