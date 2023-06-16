@@ -1,5 +1,7 @@
 use std::io;
 
+// TODO: Add from_bytes to MCType instead of implementing for individual types uniquely
+
 pub trait MCType {
     /// Copies the data of this `MCType` and encodes it according to its
     /// Minecraft protocol packet structure.

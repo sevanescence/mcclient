@@ -4,6 +4,7 @@ use super::mctypes::{VarInt, MCType};
 
 pub mod serverbound;
 pub mod clientbound;
+pub mod packet_ids;
 
 /// Interfaces serverbound packets. Structs implementing this trait are
 /// expected to be mcproto-compliant packets; transfering malformatted
@@ -36,7 +37,7 @@ pub trait InboundPacket: Sized {
     /// by the implementing structure, a `Box<Self>` is returned.
     #[deprecated]
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
-
+    
     fn from_data(packet: &MCPacket) -> Result<Self, io::Error>;
 
     /// Retrieves the ID of this inbound packet.
@@ -44,7 +45,7 @@ pub trait InboundPacket: Sized {
 }
 
 /// Serialize a serverbound packet to be sent to a server.
-#[allow(dead_code)]
+/// Packet structure: https://wiki.vg/Protocol#Packet_format
 pub fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
     let mut serialized_packet_bytes = Vec::<u8>::new();
 
@@ -59,16 +60,28 @@ pub fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
 
 pub struct MCPacketHeader{ pub size: VarInt, pub id: VarInt }
 
-/// Attemps to parse a packet header from bytes, consuming the `VarInt` elements of
+/// Attempts to parse a packet header from bytes, consuming the `VarInt` elements of
 /// the `Vec<u8>` passed.
 /// # Errors
 /// This function may return an `InvalidData` error if the `VarInt` bytes cannot be
 /// properly parsed.
-pub fn read_packet_header(bytes: &mut Vec<u8>) -> Result<MCPacketHeader, io::Error> {
+fn read_packet_header(bytes: &mut Vec<u8>) -> Result<MCPacketHeader, io::Error> {
     let packet_size = VarInt::from_vec_front(bytes)?;
     let packet_id = VarInt::from_vec_front(bytes)?;
 
     Ok(MCPacketHeader{ size: packet_size, id: packet_id })
+}
+
+impl MCPacketHeader {
+    /// Reads a structured Minecraft packet array, consuming the bytes of
+    /// the packet header and returning a parsed packet header object, or
+    /// an error.
+    /// # Errors
+    /// This function may return an `InvalidData` error if the `VarInt` bytes cannot
+    /// be properly parsed.
+    pub fn from_bytes(bytes: &mut Vec<u8>) -> Result<Self, io::Error> {
+        read_packet_header(bytes)
+    }
 }
 
 pub struct MCPacket {

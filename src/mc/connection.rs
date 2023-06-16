@@ -36,8 +36,8 @@ impl MinecraftStream {
     /// An `io::Error` of any kind will be returned if the packet cannot be sent or the
     /// stream cannot be flushed.
     pub fn send(&mut self, packet: &dyn OutboundPacket) -> Result<(), io::Error> {
-        self.writer.write_all(&serialize_packet(packet))?;
-        self.writer.flush()?;
+        self.write(packet)?;
+        self.flush()?;
         Ok(())
     }
 
