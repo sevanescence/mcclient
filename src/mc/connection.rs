@@ -1,6 +1,6 @@
 use std::{net::{TcpStream, ToSocketAddrs}, io::{self, Write, Read, BufWriter, BufReader}};
 
-use super::{packet::{clientbound::{status_response::StatusResponse, login_success::LoginSuccess, ping_response::PingResponse}, serialize_packet, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, MCPacket, InboundPacket}, mctypes::VarInt, PROTOCOL_VERSION};
+use super::{packet::{clientbound::{status_response::StatusResponse, login_success::LoginSuccess, ping_response::PingResponse}, serialize_packet, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, OutboundPacket, MCPacket, InboundPacket, packet_ids::STATUS_RES_PACKET_ID}, mctypes::VarInt, PROTOCOL_VERSION};
 
 /// Describes a two-way TCP connection to a Minecraft server. The internal
 /// buffer bytes are handled by a high-level serdes which encapsulates the
@@ -50,8 +50,8 @@ impl MinecraftStream {
     }
 
     pub fn read(&mut self) -> Result<MCPacket, io::Error> {
-        const MAX_HEADER_SIZE: usize = 6;
-        let mut header_buf: [u8; MAX_HEADER_SIZE] = [0; MAX_HEADER_SIZE];
+        const MAX_HEADER_BYTE_SIZE: usize = 6;
+        let mut header_buf: [u8; MAX_HEADER_BYTE_SIZE] = [0; MAX_HEADER_BYTE_SIZE];
         let bytes_read = self.reader.read(&mut header_buf)?;
 
         let mut received: Vec<u8> = header_buf.to_vec();
@@ -151,7 +151,7 @@ impl Connection for OfflineConnection {
         self.stream.send(&StatusRequest)?;
 
         let inbound = self.stream.read()?;
-        if inbound.header.id.value() != 0x00 {
+        if inbound.header.id.value() != STATUS_RES_PACKET_ID {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Bad packet ID."));
         }
         let response = StatusResponse::from_data(&inbound)?;

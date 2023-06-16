@@ -1,11 +1,14 @@
 use std::io;
 
+use serde_json::Value;
+
 // TODO: Add from_bytes to MCType instead of implementing for individual types uniquely
 
-pub trait MCType {
+pub trait MCType : Sized {
     /// Copies the data of this `MCType` and encodes it according to its
     /// Minecraft protocol packet structure.
     fn to_bytes(&self) -> Vec<u8>;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
     /// Gets the bytesize of the serialized version this `MCType`.
     /// # Examples
     /// ```
@@ -27,26 +30,7 @@ pub struct MCString {
 
 #[allow(dead_code)]
 impl MCString {
-    /// Attempts to create a `MCString` from a set of bytes, which should be
-    /// lead with a `VarInt` descriptor followed by a UTF-8 string.
-    /// # Panics
-    /// This function will panic if the constituent string cannot properly be
-    /// parsed as 
-    /// # Errors
-    /// This function will error in the instance that the `VarInt` header cannot
-    /// be parsed.
-    pub fn from_bytes(mut bytes: &[u8]) -> Result<Self, io::Error> {
-        let size = VarInt::from_bytes(bytes)?;
-        bytes = &bytes[size.len() as usize..];
-
-        let string_res = String::from_utf8(bytes.to_vec());
-        if string_res.is_err() {
-            Err(io::Error::new(io::ErrorKind::InvalidData, string_res.err().unwrap()))
-        } else {
-            let string = string_res.unwrap();
-            Ok(MCString { size, string })
-        }
-    }
+    
 
     pub fn string(&self) -> &String {
         &self.string
@@ -89,6 +73,27 @@ impl MCType for MCString {
         bytes.append(&mut self.string.as_bytes().to_vec());
 
         bytes
+    }
+
+    /// Attempts to create a `MCString` from a set of bytes, which should be
+    /// lead with a `VarInt` descriptor followed by a UTF-8 string.
+    /// # Panics
+    /// This function will panic if the constituent string cannot properly be
+    /// parsed as 
+    /// # Errors
+    /// This function will error in the instance that the `VarInt` header cannot
+    /// be parsed.
+    fn from_bytes(mut bytes: &[u8]) -> Result<Self, io::Error> {
+        let size = VarInt::from_bytes(bytes)?;
+        bytes = &bytes[size.len() as usize..];
+
+        let string_res = String::from_utf8(bytes.to_vec());
+        if string_res.is_err() {
+            Err(io::Error::new(io::ErrorKind::InvalidData, string_res.err().unwrap()))
+        } else {
+            let string = string_res.unwrap();
+            Ok(MCString { size, string })
+        }
     }
 
     fn size(&self) -> i32 {
@@ -151,6 +156,14 @@ impl MCType for VarInt {
         bytes.append(&mut self.bytes.clone());
 
         bytes
+    }
+
+    /// Similar to VarInt::from for From<&[u8]>, however this is recommended
+    /// as it returns an error instead of panicking.
+    fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
+        let (val, slice) = from_varint_bytes(bytes)?;
+
+        Ok(VarInt{ bytes: slice.to_vec(), value: val })
     }
 
     fn size(&self) -> i32 {
@@ -264,4 +277,22 @@ fn to_varint(mut value: i32) -> Vec<u8> {
     }
 
     bytes
+}
+
+
+
+#[derive(Debug)]
+#[allow(unused)]
+pub struct JsonResponse {
+    data: Value
+}
+
+impl JsonResponse {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
+        let mc_string = MCString::from_bytes(bytes)?;
+
+        let value: Value = serde_json::from_str(&mc_string.string())?;
+
+        Ok(JsonResponse { data: value })
+    }
 }

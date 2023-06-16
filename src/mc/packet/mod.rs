@@ -23,21 +23,12 @@ pub trait OutboundPacket {
 /// are expected to be mcproto-compliant packets which are parsed
 /// from an array of bytes retrieved from a server.
 pub trait InboundPacket: Sized {
-    /// Attempts to deserialize the given bytes into the implied packet
-    /// type. Note: Passing bytes that are not formatted as per the
-    /// Minecraft protocol is undefined.
+    /// Attempts to deserialize the given packet into the implied packet type.
     /// # Returns
-    /// This function may error in cases where the packet bytes passed
-    /// do not have the same ID as the expected packet. This behavior
-    /// is generally undefined, but implementations of clientbound
-    /// packets in the internal library necessarily implement this
-    /// behavior.
-    /// <br> <br>
-    /// If the inbound packet data is well-formatted and can be parsed
-    /// by the implementing structure, a `Box<Self>` is returned.
-    #[deprecated]
-    fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
-    
+    /// The self-referencial packet.
+    /// # Errors
+    /// This function may return an error when the provided packet data
+    /// is ill-formed or the internal types are not properly parsed.
     fn from_data(packet: &MCPacket) -> Result<Self, io::Error>;
 
     /// Retrieves the ID of this inbound packet.
@@ -94,7 +85,7 @@ impl MCPacket {
     /// # Errors
     /// This function will return `io::Error` if the bytes cannot be properly parsed.
     pub fn from_bytes(bytes: &mut Vec<u8>) -> Result<MCPacket, io::Error> {
-        let header = read_packet_header(bytes)?;
+        let header = MCPacketHeader::from_bytes(bytes)?;
         Ok(MCPacket{ header, data: std::mem::take(bytes) })
     }
 }
