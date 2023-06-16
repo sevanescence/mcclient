@@ -16,10 +16,9 @@ fn main() {
     println!("Connection successful. Requesting status...");
 
     let status_response = connection.status().expect("Could not get status.");
-    // TODO: Refactor MCTypes as per mctypes repo.
-    // TODO also: fucking refactor MCString as Into<String> or something
     println!("Response: {:?}", status_response.json_response);
 
+    // TODO: Implement ping response and login success.
     let _ping_response = connection.ping().expect("Could not ping.");
     println!("Ping response: {:#?}", _ping_response);
 }
