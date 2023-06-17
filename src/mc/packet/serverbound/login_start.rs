@@ -12,16 +12,6 @@ pub struct LoginStart {
 
 impl OutboundPacket for LoginStart {
     fn to_bytes(&self) -> Vec<u8> {
-        // let mut builder = PacketBytesBuilder::new();
-
-        // builder.append_string(self.username.clone());
-        // builder.append_bool(self.has_uuid);
-        // if self.has_uuid {
-        //     builder.append_uuid(&self.uuid);
-        // }
-
-        // builder.byte_buffer
-
         let mut builder = PacketBytesBuilder::new()
             .append_string(self.username.clone())
             .append_bool(self.has_uuid);

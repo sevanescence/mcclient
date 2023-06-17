@@ -10,6 +10,12 @@ pub enum NextState {
     LOGIN = 2
 }
 
+impl Into<i32> for NextState {
+    fn into(self) -> i32 {
+        self as i32
+    }
+}
+
 // pub struct Handshake {
 //     pub protocol_version: VarInt,
 //     pub server_addr: MCString,
@@ -26,28 +32,11 @@ pub struct Handshake {
 
 impl OutboundPacket for Handshake {
     fn to_bytes(&self) -> Vec<u8> {
-        // let mut bytes = Vec::<u8>::new();
-
-        // bytes.append(&mut VarInt::from(self.protocol_version).to_bytes());
-        // bytes.append(&mut VarInt::from(self.protocol_version).to_bytes());
-        // bytes.append(&mut self.port.to_be_bytes().to_vec());
-        // bytes.append(&mut VarInt::from_i32(self.next_state as i32).to_bytes());
-
-        // bytes
-
-        // let mut builder = PacketBytesBuilder::new();
-
-        // builder.append_i32_as_varint(self.protocol_version);
-        // builder.append_string(self.server_addr.clone());
-        // builder.append_u16(self.port);
-        // builder.append_i32_as_varint(self.next_state as i32);
-
-        // builder.byte_buffer
         PacketBytesBuilder::new()
             .append_i32_as_varint(self.protocol_version)
             .append_string(self.server_addr.clone())
             .append_u16(self.port)
-            .append_i32_as_varint(self.next_state as i32)
+            .append_i32_as_varint(self.next_state.into())
         .byte_buffer
     }
 
