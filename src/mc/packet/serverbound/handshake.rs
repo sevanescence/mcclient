@@ -35,14 +35,20 @@ impl OutboundPacket for Handshake {
 
         // bytes
 
-        let mut builder = PacketBytesBuilder::new();
+        // let mut builder = PacketBytesBuilder::new();
 
-        builder.append_i32_as_varint(self.protocol_version);
-        builder.append_string(self.server_addr.clone());
-        builder.append_u16(self.port);
-        builder.append_i32_as_varint(self.next_state as i32);
+        // builder.append_i32_as_varint(self.protocol_version);
+        // builder.append_string(self.server_addr.clone());
+        // builder.append_u16(self.port);
+        // builder.append_i32_as_varint(self.next_state as i32);
 
-        builder.byte_buffer
+        // builder.byte_buffer
+        PacketBytesBuilder::new()
+            .append_i32_as_varint(self.protocol_version)
+            .append_string(self.server_addr.clone())
+            .append_u16(self.port)
+            .append_i32_as_varint(self.next_state as i32)
+        .byte_buffer
     }
 
     fn packet_id(&self) -> i32 {

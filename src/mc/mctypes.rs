@@ -22,7 +22,7 @@ impl PacketBytesBuilder {
         PacketBytesBuilder { byte_buffer: Vec::<u8>::new() }
     }
 
-    pub fn append_uuid(&mut self, uuid: &uuid::Uuid) -> &mut Self {
+    pub fn append_uuid(mut self, uuid: &uuid::Uuid) -> Self {
         let uuid_pair = uuid.as_u64_pair();
         self.byte_buffer.extend_from_slice(&uuid_pair.1.to_be_bytes());
         self.byte_buffer.extend_from_slice(&uuid_pair.0.to_be_bytes());
@@ -30,7 +30,7 @@ impl PacketBytesBuilder {
         self
     }
 
-    pub fn append_string<S: Into<String>>(&mut self, to_string: S) -> &mut Self {
+    pub fn append_string<S: Into<String>>(mut self, to_string: S) -> Self {
         let string: String = to_string.into();
         let mc_string = MCString::from(string);
 
@@ -39,19 +39,19 @@ impl PacketBytesBuilder {
         self
     }
 
-    pub fn append_bool(&mut self, value: bool) -> &mut Self {
+    pub fn append_bool(mut self, value: bool) -> Self {
         self.byte_buffer.push(value as u8);
 
         self
     }
 
-    pub fn append_i32_as_varint(&mut self, value: i32) -> &mut Self {
+    pub fn append_i32_as_varint(mut self, value: i32) -> Self {
         self.byte_buffer.extend(VarInt::from(value).to_bytes());
 
         self
     }
 
-    pub fn append_u16(&mut self, value: u16) -> &mut Self {
+    pub fn append_u16(mut self, value: u16) -> Self {
         self.byte_buffer.extend(value.to_be_bytes().to_vec());
 
         self
