@@ -47,8 +47,8 @@ mod tests {
     #[test]
     fn outbound_packet_serialization() {
         let handshake = Handshake {
-            protocol_version: VarInt::from(PROTOCOL_VERSION),
-            server_addr: MCString::from("localhost"),
+            protocol_version: PROTOCOL_VERSION,
+            server_addr: "localhost".to_string(),
             port: 25565,
             next_state: NextState::STATUS
         };

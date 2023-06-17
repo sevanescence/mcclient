@@ -4,6 +4,50 @@ use serde_json::Value;
 
 // TODO: Add from_bytes to MCType instead of implementing for individual types uniquely
 
+// TODO: Rewrite MCString to simply build string bytes
+//       from a string view.
+
+/// A byte vec builder which helps construct a Minecraft packet that
+/// corresponds to the specification of each data type defined by the
+/// Minecraft protocol.
+pub struct PacketBytesBuilder {
+    pub byte_buffer: Vec<u8>
+}
+
+// TODO: Finish this. Not every data type is supported. NOTE: Might
+//       rename some functions to coincide with data type names
+//       specified by the Minecraft Protocol docs.
+impl PacketBytesBuilder {
+    pub fn new() -> Self {
+        PacketBytesBuilder { byte_buffer: Vec::<u8>::new() }
+    }
+
+    pub fn append_uuid(&mut self, uuid: &uuid::Uuid) {
+        let uuid_pair = uuid.as_u64_pair();
+        self.byte_buffer.extend_from_slice(&uuid_pair.1.to_be_bytes());
+        self.byte_buffer.extend_from_slice(&uuid_pair.0.to_be_bytes());
+    }
+
+    pub fn append_string<S: Into<String>>(&mut self, to_string: S) {
+        let string: String = to_string.into();
+        let mc_string = MCString::from(string);
+
+        self.byte_buffer.extend(mc_string.to_bytes());
+    }
+
+    pub fn append_bool(&mut self, value: bool) {
+        self.byte_buffer.push(value as u8);
+    }
+
+    pub fn append_i32_as_varint(&mut self, value: i32) {
+        self.byte_buffer.extend(VarInt::from(value).to_bytes());
+    }
+
+    pub fn append_u16(&mut self, value: u16) {
+        self.byte_buffer.extend(value.to_be_bytes().to_vec());
+    }
+}
+
 pub trait MCType : Sized {
     /// Copies the data of this `MCType` and encodes it according to its
     /// Minecraft protocol packet structure.

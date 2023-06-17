@@ -12,10 +12,11 @@ pub mod packet_ids;
 pub trait OutboundPacket {
     /// Serializes the internal packet data into an array of bytes.
     fn to_bytes(&self) -> Vec<u8>;
-    /// Retrieves the ID of this packet. This can be a compile-time constant.
-    /// Will eventually refactor.
+    /// Retrieves the ID of this packet. Largely references compile-time constants.
     fn packet_id(&self) -> i32;
-    /// Get length of packet (excluding length of Packet ID)
+    /// Get length of packet (excluding length of Packet ID) as if it were serialized.
+    /// TODO: Figure out why this is necessary and refactor. The length of the serialized
+    /// packet should not matter in the context of an unserialized packet.
     fn len(&self) -> i32;
 }
 
@@ -29,7 +30,7 @@ pub trait InboundPacket: Sized {
     /// # Errors
     /// This function may return an error when the provided packet data
     /// is ill-formed or the internal types are not properly parsed.
-    fn from_data(packet: &MCPacket) -> Result<Self, io::Error>;
+    fn from_data(packet: &ClientboundRawPacket) -> Result<Self, io::Error>;
 
     /// Retrieves the ID of this inbound packet.
     fn packet_id(&self) -> i32;
@@ -75,17 +76,19 @@ impl MCPacketHeader {
     }
 }
 
-pub struct MCPacket {
+// A structured container for a Minecraft network packet. This is primarily
+// used to box and parse incoming packets.
+pub struct ClientboundRawPacket {
     pub header: MCPacketHeader,
     pub data: Vec<u8>,
 }
 
-impl MCPacket {
+impl ClientboundRawPacket {
     /// Constructs a Minecraft packet object from a set of bytes, consuming the `bytes` passed.
     /// # Errors
     /// This function will return `io::Error` if the bytes cannot be properly parsed.
-    pub fn from_bytes(bytes: &mut Vec<u8>) -> Result<MCPacket, io::Error> {
+    pub fn from_bytes(bytes: &mut Vec<u8>) -> Result<ClientboundRawPacket, io::Error> {
         let header = MCPacketHeader::from_bytes(bytes)?;
-        Ok(MCPacket{ header, data: std::mem::take(bytes) })
+        Ok(ClientboundRawPacket{ header, data: std::mem::take(bytes) })
     }
 }

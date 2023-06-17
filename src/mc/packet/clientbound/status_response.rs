@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::mc::{packet::{InboundPacket, MCPacket, packet_ids::STATUS_RES_PACKET_ID}, mctypes::JsonResponse};
+use crate::mc::{packet::{InboundPacket, ClientboundRawPacket, packet_ids::STATUS_RES_PACKET_ID}, mctypes::JsonResponse};
 
 pub struct StatusResponse {
     pub json_response: JsonResponse
@@ -8,7 +8,7 @@ pub struct StatusResponse {
 
 #[allow(unused)]
 impl InboundPacket for StatusResponse {
-    fn from_data(packet: &MCPacket) -> Result<Self, io::Error> {
+    fn from_data(packet: &ClientboundRawPacket) -> Result<Self, io::Error> {
         Ok(StatusResponse{ 
             json_response: JsonResponse::from_bytes(&packet.data)?
         })

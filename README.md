@@ -15,3 +15,10 @@ NOTE: I have TODO's placed all around the code. I should really factor stuff.
 - Slight changes to API:
   - MCType now implements from_bytes to explicitly error if invalid bytes are provided for a type.
   - Clientbound packets no longer use from_bytes, and instead use from_data.
+### 0.1.2
+- Refactored internal code.
+- Added not-yet-entirely-implemented packet builder to make serialization simpler.
+  - Migrating packet member types to standard data types, abstracting away from their
+    protocol serialization.
+- **NOTE: The OutboundPacket function len() is weirdly implemented, and should honestly be abstracted to not be so confusing.**
+  **This needs to be amended before any further development.**
