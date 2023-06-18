@@ -11,7 +11,7 @@ use serde_json::Value;
 /// corresponds to the specification of each data type defined by the
 /// Minecraft protocol.
 pub struct PacketBytesBuilder {
-    pub byte_buffer: Vec<u8>
+    pub byte_buffer: Vec<u8>,
 }
 
 // TODO: Finish this. Not every data type is supported. NOTE: Might
@@ -19,13 +19,17 @@ pub struct PacketBytesBuilder {
 //       specified by the Minecraft Protocol docs.
 impl PacketBytesBuilder {
     pub fn new() -> Self {
-        PacketBytesBuilder { byte_buffer: Vec::<u8>::new() }
+        PacketBytesBuilder {
+            byte_buffer: Vec::<u8>::new(),
+        }
     }
 
     pub fn append_uuid(mut self, uuid: &uuid::Uuid) -> Self {
         let uuid_pair = uuid.as_u64_pair();
-        self.byte_buffer.extend_from_slice(&uuid_pair.1.to_be_bytes());
-        self.byte_buffer.extend_from_slice(&uuid_pair.0.to_be_bytes());
+        self.byte_buffer
+            .extend_from_slice(&uuid_pair.1.to_be_bytes());
+        self.byte_buffer
+            .extend_from_slice(&uuid_pair.0.to_be_bytes());
 
         self
     }
@@ -56,9 +60,15 @@ impl PacketBytesBuilder {
 
         self
     }
+
+    pub fn append_bytes(mut self, bytes: &[u8]) -> Self {
+        self.byte_buffer.extend(bytes);
+
+        self
+    }
 }
 
-pub trait MCType : Sized {
+pub trait MCType: Sized {
     /// Copies the data of this `MCType` and encodes it according to its
     /// Minecraft protocol packet structure.
     fn to_bytes(&self) -> Vec<u8>;
@@ -69,7 +79,7 @@ pub trait MCType : Sized {
     /// use crate::mcclient::mc::mctypes::MCString;
     /// use crate::mcclient::mc::mctypes::MCType;
     /// let string = MCString::from("Hello!".to_owned());
-    /// let size = string.size(); 
+    /// let size = string.size();
     /// // ^ returns length of "Hello!" + bytesize of `VarInt` size.
     /// // i.e., 6 + [6].len() = 7
     /// ```
@@ -84,8 +94,6 @@ pub struct MCString {
 
 #[allow(dead_code)]
 impl MCString {
-    
-
     pub fn string(&self) -> &String {
         &self.string
     }
@@ -99,9 +107,12 @@ impl From<String> for MCString {
     fn from(value: String) -> Self {
         let size: i32 = match value.len().try_into() {
             Ok(num) => num,
-            Err(msg) => panic!("{}", msg)
+            Err(msg) => panic!("{}", msg),
         };
-        MCString { size: VarInt::from(size), string: value }
+        MCString {
+            size: VarInt::from(size),
+            string: value,
+        }
     }
 }
 
@@ -113,9 +124,12 @@ impl From<&str> for MCString {
     fn from(value: &str) -> Self {
         let size: i32 = match value.len().try_into() {
             Ok(num) => num,
-            Err(msg) => panic!("{}", msg)
+            Err(msg) => panic!("{}", msg),
         };
-        MCString { size: VarInt::from(size), string: value.to_owned() }
+        MCString {
+            size: VarInt::from(size),
+            string: value.to_owned(),
+        }
     }
 }
 
@@ -133,7 +147,7 @@ impl MCType for MCString {
     /// lead with a `VarInt` descriptor followed by a UTF-8 string.
     /// # Panics
     /// This function will panic if the constituent string cannot properly be
-    /// parsed as 
+    /// parsed as
     /// # Errors
     /// This function will error in the instance that the `VarInt` header cannot
     /// be parsed.
@@ -143,7 +157,10 @@ impl MCType for MCString {
 
         let string_res = String::from_utf8(bytes.to_vec());
         if string_res.is_err() {
-            Err(io::Error::new(io::ErrorKind::InvalidData, string_res.err().unwrap()))
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                string_res.err().unwrap(),
+            ))
         } else {
             let string = string_res.unwrap();
             Ok(MCString { size, string })
@@ -172,13 +189,16 @@ impl MCString {
 #[allow(dead_code)]
 pub struct VarInt {
     bytes: Vec<u8>,
-    value: i32
+    value: i32,
 }
 
 impl From<i32> for VarInt {
     /// Creates a `VarInt` representation of `value`.
     fn from(value: i32) -> Self {
-        VarInt{ bytes: to_varint(value), value }
+        VarInt {
+            bytes: to_varint(value),
+            value,
+        }
     }
 }
 
@@ -188,18 +208,21 @@ impl From<&[u8]> for VarInt {
     /// data being passed to `from_bytes` is a slice of a Minecraft packet, and
     /// the size of a `VarInt` is variadic, a slice larger than the encompassed
     /// number can be passed without unexpected error.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// The parsing of the leading bytes to a `VarInt` will panic if the number
     /// is evaluated to greater than 5 bytes in size. This can be caused by
     /// either the wrong data type being read or the bytes being badly formatted.
     fn from(bytes: &[u8]) -> Self {
         let (val, slice) = match from_varint_bytes(bytes) {
             Ok(t) => t,
-            Err(msg) => panic!("{}", msg)
+            Err(msg) => panic!("{}", msg),
         };
-        VarInt{ bytes: slice.to_vec(), value: val }
+        VarInt {
+            bytes: slice.to_vec(),
+            value: val,
+        }
     }
 }
 
@@ -217,7 +240,10 @@ impl MCType for VarInt {
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
         let (val, slice) = from_varint_bytes(bytes)?;
 
-        Ok(VarInt{ bytes: slice.to_vec(), value: val })
+        Ok(VarInt {
+            bytes: slice.to_vec(),
+            value: val,
+        })
     }
 
     fn size(&self) -> i32 {
@@ -240,7 +266,10 @@ impl VarInt {
 
     /// Creates a `VarInt` representation of `value`.
     pub fn from_i32(value: i32) -> Self {
-        VarInt{ bytes: to_varint(value), value }
+        VarInt {
+            bytes: to_varint(value),
+            value,
+        }
     }
 
     /// Creates a `VarInt` from a slice `&[u8]` whose leading bytes represent
@@ -248,15 +277,18 @@ impl VarInt {
     /// data being passed to `from_bytes` is a slice of a Minecraft packet, and
     /// the size of a `VarInt` is variadic, a slice larger than the encompassed
     /// number can be passed without unexpected error.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// The parsing of the leading bytes to a `VarInt` will return an `InvalidData` error
-    /// if the number is evaluated to greater than 5 bytes in size. This can be caused 
+    /// if the number is evaluated to greater than 5 bytes in size. This can be caused
     /// by either the wrong data type being read or the bytes being badly formatted.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
         let (val, slice) = from_varint_bytes(bytes)?;
-        Ok(VarInt{ bytes: slice.to_vec(), value: val })
+        Ok(VarInt {
+            bytes: slice.to_vec(),
+            value: val,
+        })
     }
 
     /// Retrieves the byte size of the `VarInt`.
@@ -274,8 +306,8 @@ impl VarInt {
         self.value
     }
 
-    /// Sets the value of this `VarInt` to represent the `value` passed. This function 
-    /// may be used in place of `VarInt::from_i32()` when reinitializing a `VarInt` 
+    /// Sets the value of this `VarInt` to represent the `value` passed. This function
+    /// may be used in place of `VarInt::from_i32()` when reinitializing a `VarInt`
     /// is not favorable.
     pub fn set(&mut self, value: i32) {
         self.value = value;
@@ -304,7 +336,7 @@ fn from_varint_bytes(bytes: &[u8]) -> Result<(i32, &[u8]), io::Error> {
         if pos >= 32 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "VarInt descriptor exceeds >5 bytes"
+                "VarInt descriptor exceeds >5 bytes",
             ));
         }
     }
@@ -333,12 +365,10 @@ fn to_varint(mut value: i32) -> Vec<u8> {
     bytes
 }
 
-
-
 #[derive(Debug)]
 #[allow(unused)]
 pub struct JsonResponse {
-    data: Value
+    data: Value,
 }
 
 impl JsonResponse {

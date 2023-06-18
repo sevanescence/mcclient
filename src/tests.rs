@@ -1,7 +1,16 @@
 #[cfg(test)]
 mod tests {
-    use crate::mc::{mctypes::{VarInt, MCType}, packet::{serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, serialize_packet}, PROTOCOL_VERSION};
-
+    use crate::mc::{
+        mctypes::{MCType, VarInt},
+        packet::{
+            serialize_packet,
+            serverbound::{
+                handshake::{Handshake, NextState},
+                status_request::StatusRequest,
+            },
+        },
+        PROTOCOL_VERSION,
+    };
 
     #[test]
     fn from_i32_to_varint() {
@@ -28,9 +37,15 @@ mod tests {
         assert_eq!(255, VarInt::from(&[255, 1][..]).value());
         assert_eq!(25565, VarInt::from(&[221, 199, 1][..]).value());
         assert_eq!(2097151, VarInt::from(&[255, 255, 127][..]).value());
-        assert_eq!(2147483647, VarInt::from(&[255, 255, 255, 255, 7][..]).value());
+        assert_eq!(
+            2147483647,
+            VarInt::from(&[255, 255, 255, 255, 7][..]).value()
+        );
         assert_eq!(-1, VarInt::from(&[255, 255, 255, 255, 15][..]).value());
-        assert_eq!(-2147483648, VarInt::from(&[128, 128, 128, 128, 8][..]).value());
+        assert_eq!(
+            -2147483648,
+            VarInt::from(&[128, 128, 128, 128, 8][..]).value()
+        );
     }
 
     #[test]
@@ -41,7 +56,10 @@ mod tests {
         assert_eq!(&[127][..], VarInt::from(&[127, 0][..]).bytes());
         assert_eq!(&[128, 1][..], VarInt::from(&[128, 1, 0][..]).bytes());
         assert_eq!(&[255, 1][..], VarInt::from(&[255, 1, 0][..]).bytes());
-        assert_eq!(&[221, 199, 1][..], VarInt::from(&[221, 199, 1, 0][..]).bytes());
+        assert_eq!(
+            &[221, 199, 1][..],
+            VarInt::from(&[221, 199, 1, 0][..]).bytes()
+        );
     }
 
     #[test]
@@ -50,7 +68,7 @@ mod tests {
             protocol_version: PROTOCOL_VERSION,
             server_addr: "localhost".to_string(),
             port: 25565,
-            next_state: NextState::STATUS
+            next_state: NextState::STATUS,
         };
 
         let actual_data_size = VarInt::from(PROTOCOL_VERSION).len() + 10 + 2 + 1;

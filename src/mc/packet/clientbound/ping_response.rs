@@ -1,4 +1,2 @@
 #[derive(Debug)]
-pub struct PingResponse {
-
-}
+pub struct PingResponse {}

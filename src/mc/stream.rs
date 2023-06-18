@@ -1,8 +1,11 @@
-use std::{net::{TcpStream, ToSocketAddrs}, io::{BufWriter, BufReader, self, Write, Read}};
+use std::{
+    io::{self, BufReader, BufWriter, Read, Write},
+    net::{TcpStream, ToSocketAddrs},
+};
 
 use crate::mc::mctypes::VarInt;
 
-use super::packet::{OutboundPacket, serialize_packet, ClientboundRawPacket};
+use super::packet::{serialize_packet, ClientboundRawPacket, OutboundPacket};
 
 /// Describes a two-way TCP connection to a Minecraft server. The internal
 /// buffer bytes are handled by a high-level serdes which encapsulates the
@@ -13,15 +16,14 @@ pub struct MinecraftStream {
     reader: BufReader<TcpStream>,
 }
 
-
 impl MinecraftStream {
     pub fn connect<T: ToSocketAddrs>(addr: T) -> Result<Self, io::Error> {
         let stream = TcpStream::connect(addr)?;
-        
+
         let writer = BufWriter::new(stream.try_clone().unwrap());
         let reader = BufReader::new(stream);
 
-        Ok(MinecraftStream{ writer, reader })
+        Ok(MinecraftStream { writer, reader })
     }
 
     /// Writes to the TCP outbound buffer. This should be used in tandem with
@@ -57,7 +59,7 @@ impl MinecraftStream {
         let bytes_read = self.reader.read(&mut header_buf)?;
 
         let mut received: Vec<u8> = header_buf.to_vec();
-        
+
         let len = VarInt::from_bytes(&received)?.value() as usize;
         let mut total_bytes_read = bytes_read;
         let mut buf: [u8; 256] = [0; 256];
@@ -65,7 +67,7 @@ impl MinecraftStream {
             let bytes_read = self.reader.read(&mut buf)?;
             received.extend_from_slice(&buf[..bytes_read]);
             total_bytes_read += bytes_read;
-        };
+        }
 
         ClientboundRawPacket::from_bytes(&mut received)
     }

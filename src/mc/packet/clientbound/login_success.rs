@@ -1,4 +1,1 @@
-pub struct LoginSuccess {
-
-}
-
+pub struct LoginSuccess {}

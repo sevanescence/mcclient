@@ -7,10 +7,6 @@ impl OutboundPacket for StatusRequest {
         vec![]
     }
 
-    fn len(&self) -> i32 {
-        0
-    }
-
     fn packet_id(&self) -> i32 {
         0x00
     }

@@ -1,7 +1,12 @@
-use mcclient::mc::connection::{OfflineConnection, Connection};
+use mcclient::mc::connection::{Connection, OfflineConnection};
 
 mod mc;
 mod tests;
+
+// TODO: Implement mctype size functions (without having to make instances of the types!) and more packet builder functions
+// TODO: Get rid of OutboundPacket::len()
+
+// NOTE: Commit changes to OutboundPacket before rewriting serialize_packet
 
 fn main() {
     const DOMAIN: &str = "localhost";
@@ -10,9 +15,8 @@ fn main() {
 
     println!("Connecting...");
 
-    let mut connection = OfflineConnection::connect(DOMAIN, PORT)
-        .expect("Could not connect.");
-    
+    let mut connection = OfflineConnection::connect(DOMAIN, PORT).expect("Could not connect.");
+
     println!("Connection successful. Requesting status...");
 
     let status_response = connection.status().expect("Could not get status.");

@@ -1,8 +1,21 @@
 use std::io;
 
-use super::{packet::{clientbound::{status_response::StatusResponse, login_success::LoginSuccess, ping_response::PingResponse}, serverbound::{handshake::{Handshake, NextState}, status_request::StatusRequest}, InboundPacket, packet_ids::STATUS_RES_PACKET_ID}, PROTOCOL_VERSION, stream::MinecraftStream};
-
-
+use super::{
+    packet::{
+        clientbound::{
+            login_success::LoginSuccess, ping_response::PingResponse,
+            status_response::StatusResponse,
+        },
+        packet_ids::STATUS_RES_PACKET_ID,
+        serverbound::{
+            handshake::{Handshake, NextState},
+            status_request::StatusRequest,
+        },
+        InboundPacket,
+    },
+    stream::MinecraftStream,
+    PROTOCOL_VERSION,
+};
 
 // type AnyStringType = dyn AsRef<str>;
 
@@ -12,6 +25,8 @@ use super::{packet::{clientbound::{status_response::StatusResponse, login_succes
 /// be inferred once a user attempts to login.
 /// # Example
 /// ```
+/// use mcclient::mc::connection::{Connection, OfflineConnection};
+/// 
 /// let mut connection = OfflineConnection::connect("localhost", 25565).expect("Could not connect");
 /// connection.username(); // -> Returns `None`
 /// let login_success = connection.login("Makoto").expect("Could not log in");
@@ -42,7 +57,7 @@ pub trait Connection: Sized {
     fn login<T: Into<String> + Clone>(&mut self, username: T) -> Result<LoginSuccess, io::Error>;
 
     /// Gets the stream managed by this connection, which is used to send and receive packets.
-    fn sock(&mut self) -> &mut MinecraftStream; 
+    fn sock(&mut self) -> &mut MinecraftStream;
 
     /// Gets the domain of the connection. This retrieves the domain passed to the initial connection
     /// attempt, not the endpoint IP resolved by the underlying TCP stream object.
@@ -63,15 +78,20 @@ pub struct OfflineConnection {
     stream: MinecraftStream,
     domain: String,
     port: u16,
-    username: Option<String>
+    username: Option<String>,
 }
 
 #[allow(unused)]
 impl Connection for OfflineConnection {
     fn connect<T: Into<String> + Clone>(domain: T, port: u16) -> Result<Self, io::Error> {
         let mut stream = MinecraftStream::connect(format!("{}:{}", domain.clone().into(), port))?;
-        
-        Ok(OfflineConnection { stream, domain: domain.into(), port, username: None })
+
+        Ok(OfflineConnection {
+            stream,
+            domain: domain.into(),
+            port,
+            username: None,
+        })
     }
 
     fn status(&mut self) -> Result<StatusResponse, io::Error> {
@@ -79,9 +99,9 @@ impl Connection for OfflineConnection {
             protocol_version: PROTOCOL_VERSION.into(),
             server_addr: self.domain.clone().into(), // TODO change to String type after MCType refactor
             port: self.port,
-            next_state: NextState::STATUS
+            next_state: NextState::STATUS,
         };
-        
+
         self.stream.send(&handshake)?;
         self.stream.send(&StatusRequest)?;
 
@@ -95,12 +115,12 @@ impl Connection for OfflineConnection {
     }
 
     fn ping(&mut self) -> Result<PingResponse, io::Error> {
-        Ok(PingResponse {  })
+        Ok(PingResponse {})
     }
 
     fn login<T: Into<String> + Clone>(&mut self, username: T) -> Result<LoginSuccess, io::Error> {
         self.username = Some(username.into());
-        Ok(LoginSuccess {  })
+        Ok(LoginSuccess {})
     }
 
     fn sock(&mut self) -> &mut MinecraftStream {

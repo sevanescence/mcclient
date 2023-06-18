@@ -22,3 +22,5 @@ NOTE: I have TODO's placed all around the code. I should really factor stuff.
     protocol serialization.
 - **NOTE: The OutboundPacket function len() is weirdly implemented, and should honestly be abstracted to not be so confusing.**
   **This needs to be amended before any further development.**
+### 0.1.3
+- Removed OutboundPacket::len(), this is all taken care of in the `serialize_packet`.
