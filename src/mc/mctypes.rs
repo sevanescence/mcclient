@@ -35,10 +35,8 @@ impl PacketBytesBuilder {
     }
 
     pub fn append_string<S: Into<String>>(mut self, to_string: S) -> Self {
-        let string: String = to_string.into();
-        let mc_string = MCString::from(string);
-
-        self.byte_buffer.extend(mc_string.to_bytes());
+        let mc_string = mc_types::to_mc_string_bytes(to_string.into());
+        self.byte_buffer.extend(mc_string);
 
         self
     }
@@ -51,6 +49,12 @@ impl PacketBytesBuilder {
 
     pub fn append_i32_as_varint(mut self, value: i32) -> Self {
         self.byte_buffer.extend(VarInt::from(value).to_bytes());
+
+        self
+    }
+
+    pub fn append_varint(mut self, value: &VarInt) -> Self {
+        self.byte_buffer.extend(value.bytes());
 
         self
     }
@@ -68,8 +72,47 @@ impl PacketBytesBuilder {
     }
 }
 
+pub mod mc_types {
+    use super::{VarInt, MCType};
+
+    /// Parses a `String` to a MCProto-serialized array of bytes.
+    /// # Note
+    /// This is NOT just a byte array of the internal string. It is prefixed with
+    /// the length of the string encoded as a VarInt, as per the Minecraft Protocol's
+    /// specification for the structure of a packet string.
+    pub fn to_mc_string_bytes(string: String) -> Vec<u8> {
+        let mut bytes = Vec::<u8>::new();
+
+        let string_len = TryInto::<i32>::try_into(string.len()).unwrap();
+        bytes.append(&mut VarInt::from_i32(string_len).to_bytes());
+        bytes.append(&mut string.into_bytes());
+
+        bytes
+    }
+
+    /// Reads VarInt bytes from the front of the provided range.
+    pub fn scan_varint_from_bytes(bytes: &[u8]) -> i32 {
+        let (val, _slice) = match super::from_varint_bytes(bytes) {
+            Ok(t) => t,
+            Err(msg) => panic!("{}", msg),
+        };
+
+        val
+    }
+
+    /// Parses an i32 to a VarInt.
+    pub fn to_varint_bytes(value: i32) -> Vec<u8> {
+        super::to_varint(value)
+    }
+
+    /// Retrieves the length of an i32 as it were serialized to a VarInt.
+    pub fn varint_byte_size(value: i32) -> i32 {
+        VarInt::from_i32(value).len()
+    }
+}
+
 pub trait MCType: Sized {
-    /// Copies the data of this `MCType` and encodes it according to its
+    /// Copies the data of this `MCType` and encodes it according to itso
     /// Minecraft protocol packet structure.
     fn to_bytes(&self) -> Vec<u8>;
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error>;
@@ -78,6 +121,7 @@ pub trait MCType: Sized {
     /// ```
     /// use crate::mcclient::mc::mctypes::MCString;
     /// use crate::mcclient::mc::mctypes::MCType;
+    /// 
     /// let string = MCString::from("Hello!".to_owned());
     /// let size = string.size();
     /// // ^ returns length of "Hello!" + bytesize of `VarInt` size.
@@ -191,6 +235,9 @@ pub struct VarInt {
     bytes: Vec<u8>,
     value: i32,
 }
+// Places to remove VarInt dependency:
+//  - stream.rs (MinecraftStream::read())
+//  - packet/mod.rs
 
 impl From<i32> for VarInt {
     /// Creates a `VarInt` representation of `value`.
@@ -315,6 +362,11 @@ impl VarInt {
     }
 }
 
+/// Parses a VarInt from the front of the provided iterator range.
+/// # Returns
+/// A pair containing the parsed i32 value, and the range excluding the parsed VarInt.
+/// # Note
+/// This is meant to be used internally.
 fn from_varint_bytes(bytes: &[u8]) -> Result<(i32, &[u8]), io::Error> {
     let mut value = 0;
     let mut pos = 0;
@@ -344,6 +396,11 @@ fn from_varint_bytes(bytes: &[u8]) -> Result<(i32, &[u8]), io::Error> {
     Ok((value, &bytes[..end_idx]))
 }
 
+/// Parses an i32 to a serialized VarInt byte array.
+/// # Returns
+/// The serialized VarInt array.
+/// # Note
+/// This is meant to be used internally.
 fn to_varint(mut value: i32) -> Vec<u8> {
     let mut bytes = Vec::<u8>::new();
 
@@ -372,6 +429,7 @@ pub struct JsonResponse {
 }
 
 impl JsonResponse {
+    // this fucking sucks, stop using MCString
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
         let mc_string = MCString::from_bytes(bytes)?;
 

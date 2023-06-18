@@ -1,6 +1,6 @@
 use std::io;
 
-use super::mctypes::{MCType, PacketBytesBuilder, VarInt};
+use super::mctypes::{PacketBytesBuilder, VarInt, mc_types};
 
 pub mod clientbound;
 pub mod packet_ids;
@@ -35,48 +35,20 @@ pub trait InboundPacket: Sized {
 /// Serialize a serverbound packet to be sent to a server.
 /// Packet structure: https://wiki.vg/Protocol#Packet_format
 pub fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
-    let mut serialized_packet_bytes = Vec::<u8>::new();
-
-    let data_bytes = data.to_bytes();
     let packet_id_serialized = VarInt::from_i32(data.packet_id());
-    let packet_size = VarInt::from_i32(data_bytes.len() as i32 + packet_id_serialized.size());
+    let packet_data_bytes = data.to_bytes();
+    let packet_size = packet_id_serialized.len() + packet_data_bytes.len() as i32;
 
-    serialized_packet_bytes.append(&mut packet_size.to_bytes());
-    serialized_packet_bytes.append(&mut packet_id_serialized.to_bytes());
-    serialized_packet_bytes.append(
-        &mut PacketBytesBuilder::new()
-            .append_bytes(&data_bytes)
-            .byte_buffer,
-    );
-
-    // let packet_id = VarInt::from_i32(data.packet_id());
-    // let size = data.len() + packet_id.size();
-    // serialized_packet_bytes.append(&mut VarInt::from(size).to_bytes());
-    // serialized_packet_bytes.append(&mut packet_id.to_bytes());
-    // serialized_packet_bytes.append(&mut data.to_bytes());
-    println!("{:?}", serialized_packet_bytes);
-
-    // serialized_packet_bytes = PacketBytesBuilder::new()
-    //     .append_i32_as_varint(packet_size.value())
-    //     .append_i32_as_varint(value)
-
-    serialized_packet_bytes
-    // let mut data_bytes = data.to_bytes();
-
-    // let mut buf = PacketBytesBuilder::new()
-    //     .append_i32_as_varint(data_bytes.len() as i32)
-    //     .append_i32_as_varint(data.packet_id())
-    //     //.append_bytes(&data_bytes)
-    // .byte_buffer;
-
-    // buf.append(&mut data_bytes);
-
-    // buf
+    PacketBytesBuilder::new()
+        .append_i32_as_varint(packet_size)
+        .append_varint(&packet_id_serialized)
+        .append_bytes(&packet_data_bytes)
+    .byte_buffer
 }
 
 pub struct MCPacketHeader {
-    pub size: VarInt,
-    pub id: VarInt,
+    pub size: i32,
+    pub id: i32,
 }
 
 /// Attempts to parse a packet header from bytes, consuming the `VarInt` elements of
@@ -88,9 +60,15 @@ fn read_packet_header(bytes: &mut Vec<u8>) -> Result<MCPacketHeader, io::Error> 
     let packet_size = VarInt::from_vec_front(bytes)?;
     let packet_id = VarInt::from_vec_front(bytes)?;
 
+    // potential refactor:
+    // let packet_size: i32 = mc_types::read_i32_from_varint(&bytes)
+    // let bytes_window = bytes[mc_types::varint_size(packet_size)..]
+    // let packet_size = mc_types::scan_varint_from_bytes(&bytes);
+    // let packet_id = mc_types::scan_varint_from_bytes(&bytes[mc_types::varint_byte_size(packet_size) as usize..]);
+
     Ok(MCPacketHeader {
-        size: packet_size,
-        id: packet_id,
+        size: packet_size.value(),
+        id: packet_id.value(),
     })
 }
 

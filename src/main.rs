@@ -19,6 +19,7 @@ fn main() {
 
     println!("Connection successful. Requesting status...");
 
+    // TODO: Write BufferedPacketReader to read and consume packet bytes, rather than relying on side effects.
     let status_response = connection.status().expect("Could not get status.");
     println!("Response: {:?}", status_response.json_response);
 
