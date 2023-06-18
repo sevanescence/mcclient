@@ -20,6 +20,8 @@ fn main() {
     println!("Connection successful. Requesting status...");
 
     // TODO: Write BufferedPacketReader to read and consume packet bytes, rather than relying on side effects.
+    //       The BufferedPackedReader is meant to replace the weird global functions that consume an array to
+    //       read VarInt data and other stuff. The first calls to it are in the constructor of the MCPacketHeader.
     let status_response = connection.status().expect("Could not get status.");
     println!("Response: {:?}", status_response.json_response);
 
