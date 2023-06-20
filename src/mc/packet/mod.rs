@@ -82,10 +82,12 @@ fn read_packet_header(bytes: &mut Vec<u8>) -> Result<MCPacketHeader, io::Error> 
     // let packet_size = mc_types::scan_varint_from_bytes(&bytes);
     // let packet_id = mc_types::scan_varint_from_bytes(&bytes[mc_types::varint_byte_size(packet_size) as usize..]);
 
-    Ok(MCPacketHeader {
-        size: packet_size.value(),
-        id: packet_id.value(),
-    })
+    let header = MCPacketHeader {
+        size: packet_size.into(),
+        id: packet_id.into(),
+    };
+
+    Ok(header)
 }
 
 impl MCPacketHeader {

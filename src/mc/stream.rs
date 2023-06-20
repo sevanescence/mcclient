@@ -73,7 +73,7 @@ impl MinecraftStream {
 
         let mut received: Vec<u8> = header_buf.to_vec();
 
-        let len = VarInt::from_bytes(&received)?.value() as usize;
+        let len = TryInto::<i32>::try_into(VarInt::from_bytes(&received)?).unwrap() as usize;
         let mut total_bytes_read = bytes_read;
         let mut buf: [u8; 256] = [0; 256];
         while total_bytes_read < len {

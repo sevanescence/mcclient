@@ -24,7 +24,7 @@ fn main() {
     //       The BufferedPackedReader is meant to replace the weird global functions that consume an array to
     //       read VarInt data and other stuff. The first calls to it are in the constructor of the MCPacketHeader.
     let status_response = connection.status().expect("Could not get status.");
-    println!("Response: {:?}", status_response.json_response);
+    println!("Response: {:#?}", status_response.json_response);
 
     // TODO: Implement ping response and login success.
     let _ping_response = connection.ping().expect("Could not ping.");

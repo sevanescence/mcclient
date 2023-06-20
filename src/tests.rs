@@ -28,22 +28,22 @@ mod tests {
 
     #[test]
     fn from_varint_to_i32() {
-        assert_eq!(0, VarInt::from(&[0][..]).value());
-        assert_eq!(1, VarInt::from(&[1][..]).value());
-        assert_eq!(2, VarInt::from(&[2][..]).value());
-        assert_eq!(127, VarInt::from(&[127][..]).value());
-        assert_eq!(128, VarInt::from(&[128, 1][..]).value());
-        assert_eq!(255, VarInt::from(&[255, 1][..]).value());
-        assert_eq!(25565, VarInt::from(&[221, 199, 1][..]).value());
-        assert_eq!(2097151, VarInt::from(&[255, 255, 127][..]).value());
+        assert_eq!(0, TryInto::<i32>::try_into(VarInt::from(&[0][..])).unwrap());
+        assert_eq!(1, TryInto::<i32>::try_into(VarInt::from(&[1][..])).unwrap());
+        assert_eq!(2, TryInto::<i32>::try_into(VarInt::from(&[2][..])).unwrap());
+        assert_eq!(127, TryInto::<i32>::try_into(VarInt::from(&[127][..])).unwrap());
+        assert_eq!(128, TryInto::<i32>::try_into(VarInt::from(&[128, 1][..])).unwrap());
+        assert_eq!(255, TryInto::<i32>::try_into(VarInt::from(&[255, 1][..])).unwrap());
+        assert_eq!(25565, TryInto::<i32>::try_into(VarInt::from(&[221, 199, 1][..])).unwrap());
+        assert_eq!(2097151, TryInto::<i32>::try_into(VarInt::from(&[255, 255, 127][..])).unwrap());
         assert_eq!(
             2147483647,
-            VarInt::from(&[255, 255, 255, 255, 7][..]).value()
+            TryInto::<i32>::try_into(VarInt::from(&[255, 255, 255, 255, 7][..])).unwrap()
         );
-        assert_eq!(-1, VarInt::from(&[255, 255, 255, 255, 15][..]).value());
+        assert_eq!(-1, TryInto::<i32>::try_into(VarInt::from(&[255, 255, 255, 255, 15][..])).unwrap());
         assert_eq!(
             -2147483648,
-            VarInt::from(&[128, 128, 128, 128, 8][..]).value()
+            TryInto::<i32>::try_into(VarInt::from(&[128, 128, 128, 128, 8][..])).unwrap()
         );
     }
 

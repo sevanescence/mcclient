@@ -12,8 +12,9 @@ pub struct StatusResponse {
 #[allow(unused)]
 impl InboundPacket for StatusResponse {
     fn from_data(packet: &ClientboundRawPacket) -> Result<Self, io::Error> {
+        let res = JsonResponse::from_bytes(&packet.data).expect("failed here");
         Ok(StatusResponse {
-            json_response: JsonResponse::from_bytes(&packet.data)?,
+            json_response: res,
         })
     }
 

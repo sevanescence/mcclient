@@ -198,7 +198,6 @@ impl MCType for MCString {
 #[allow(dead_code)]
 pub struct VarInt {
     bytes: Vec<u8>,
-    value: i32,
 }
 // Places to remove VarInt dependency:
 //  - stream.rs (MinecraftStream::read())
@@ -209,7 +208,6 @@ impl From<i32> for VarInt {
     fn from(value: i32) -> Self {
         VarInt {
             bytes: to_varint(value),
-            value,
         }
     }
 }
@@ -227,13 +225,15 @@ impl From<&[u8]> for VarInt {
     /// is evaluated to greater than 5 bytes in size. This can be caused by
     /// either the wrong data type being read or the bytes being badly formatted.
     fn from(bytes: &[u8]) -> Self {
+        //              v THESE WARNINGS STAY HERE UNTIL WE'RE DONE
         let (val, slice) = match from_varint_bytes(bytes) {
             Ok(t) => t,
             Err(msg) => panic!("{}", msg),
         };
         VarInt {
-            bytes: slice.to_vec(),
-            value: val,
+            // TODO: REFACTOR THE FUCKING FUNCTION TO RETURN THE POPPED SLICE
+            //          (DO NOT EAT UNTIL THIS IS DONE)
+            bytes: VarInt::from_i32(val).to_bytes(),
         }
     }
 }
@@ -253,8 +253,7 @@ impl MCType for VarInt {
         let (val, slice) = from_varint_bytes(bytes)?;
 
         Ok(VarInt {
-            bytes: slice.to_vec(),
-            value: val,
+            bytes: VarInt::from_i32(val).to_bytes(),
         })
     }
 
@@ -263,7 +262,6 @@ impl MCType for VarInt {
     }
 }
 
-#[allow(dead_code)]
 impl VarInt {
     /// Creats a `VarInt` from a slice of a `Vec<u8>` `vec` and consumes the
     /// front of the `Vec<u8>` that represents the constituent VarInt bytes.
@@ -280,7 +278,6 @@ impl VarInt {
     pub fn from_i32(value: i32) -> Self {
         VarInt {
             bytes: to_varint(value),
-            value,
         }
     }
 
@@ -296,10 +293,9 @@ impl VarInt {
     /// if the number is evaluated to greater than 5 bytes in size. This can be caused
     /// by either the wrong data type being read or the bytes being badly formatted.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
-        let (val, slice) = from_varint_bytes(bytes)?;
+        let (val, _slice) = from_varint_bytes(bytes)?;
         Ok(VarInt {
-            bytes: slice.to_vec(),
-            value: val,
+            bytes: VarInt::from_i32(val).to_bytes(),
         })
     }
 
@@ -313,17 +309,18 @@ impl VarInt {
         &self.bytes
     }
 
-    /// Returns the numerical equivalent of this `VarInt`.
-    pub fn value(&self) -> i32 {
-        self.value
-    }
-
     /// Sets the value of this `VarInt` to represent the `value` passed. This function
     /// may be used in place of `VarInt::from_i32()` when reinitializing a `VarInt`
     /// is not favorable.
+    #[allow(unused)]
     pub fn set(&mut self, value: i32) {
-        self.value = value;
-        self.bytes = to_varint(self.value);
+        self.bytes = to_varint(value);
+    }
+}
+
+impl Into<i32> for VarInt {
+    fn into(self) -> i32 {
+        from_varint_bytes(&self.bytes).unwrap().0
     }
 }
 
@@ -394,8 +391,10 @@ pub struct JsonResponse {
 }
 
 impl JsonResponse {
+    // TODO: Optimize this. Lots of dirty copying goes on here, and it isn't just this function.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
-        let value: Value = serde_json::from_slice(bytes)?;
+        let mc_string = MCString::from_bytes(bytes)?;
+        let value: Value = serde_json::from_slice(mc_string.bytes())?;
 
         Ok(JsonResponse { data: value })
     }
