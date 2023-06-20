@@ -5,7 +5,7 @@ use std::{
 
 use crate::mc::mctypes::VarInt;
 
-use super::packet::{serialize_packet, ClientboundRawPacket, OutboundPacket};
+use super::packet::{ClientboundRawPacket, OutboundPacket, OutboundPacketBuffer};
 
 /// Describes a two-way TCP connection to a Minecraft server. The internal
 /// buffer bytes are handled by a high-level serdes which encapsulates the
@@ -17,6 +17,12 @@ pub struct MinecraftStream {
 }
 
 impl MinecraftStream {
+    /// Connect to a remote Minecraft server. This function is not able to determine whether a
+    /// server endpoint is MCProto-compliant without attempting to establish a status response.
+    /// # Returns
+    /// A stream to a Minecraft server is returned if the connection is successfully established.
+    /// # Errors
+    /// Any `io::Error` is returned if the connection cannot be established.
     pub fn connect<T: ToSocketAddrs>(addr: T) -> Result<Self, io::Error> {
         let stream = TcpStream::connect(addr)?;
 
@@ -32,7 +38,9 @@ impl MinecraftStream {
     /// # Errors
     /// An `io::Error` of any kind will be returned if the packet cannot be sent.
     pub fn write(&mut self, packet: &dyn OutboundPacket) -> Result<(), io::Error> {
-        Ok(self.writer.write_all(&serialize_packet(packet))?)
+        let packet_buffer = OutboundPacketBuffer::from(packet);
+
+        Ok(self.writer.write_all(packet_buffer.data())?)
     }
 
     /// Writes to the TCP outbound buffer, and flushes the buffer.
@@ -53,6 +61,11 @@ impl MinecraftStream {
         self.writer.flush()
     }
 
+    /// Attempts to consume a packet from the pending inbound byte stream.
+    /// # Returns
+    /// The corresponding packet data upon read success.
+    /// # Errors
+    /// This function will return an error if the packet could not be properly consumed.
     pub fn read(&mut self) -> Result<ClientboundRawPacket, io::Error> {
         const MAX_HEADER_BYTE_SIZE: usize = 6;
         let mut header_buf: [u8; MAX_HEADER_BYTE_SIZE] = [0; MAX_HEADER_BYTE_SIZE];

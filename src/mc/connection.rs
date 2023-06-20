@@ -59,7 +59,9 @@ pub trait Connection: Sized {
     /// Gets the stream managed by this connection, which is used to send and receive packets.
     fn sock(&mut self) -> &mut MinecraftStream;
 
-    /// Gets the domain of the connection. This retrieves the domain passed to the initial connection
+    /// Gets the domain of the connection. 
+    /// # Note
+    /// This retrieves the domain passed to the initial connection
     /// attempt, not the endpoint IP resolved by the underlying TCP stream object.
     fn domain(&self) -> &str;
     /// Gets the port of the connection.

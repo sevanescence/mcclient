@@ -35,20 +35,15 @@ impl PacketBytesBuilder {
     }
 
     pub fn append_string<S: Into<String>>(mut self, to_string: S) -> Self {
-        let mc_string = mc_types::to_mc_string_bytes(to_string.into());
-        self.byte_buffer.extend(mc_string);
+        //let mc_string = mc_types::to_mc_string_bytes(to_string.into());
+        let mc_string = MCString::from(to_string.into());
+        self.byte_buffer.extend(mc_string.to_bytes());
 
         self
     }
 
     pub fn append_bool(mut self, value: bool) -> Self {
         self.byte_buffer.push(value as u8);
-
-        self
-    }
-
-    pub fn append_i32_as_varint(mut self, value: i32) -> Self {
-        self.byte_buffer.extend(VarInt::from(value).to_bytes());
 
         self
     }
@@ -72,44 +67,6 @@ impl PacketBytesBuilder {
     }
 }
 
-pub mod mc_types {
-    use super::{VarInt, MCType};
-
-    /// Parses a `String` to a MCProto-serialized array of bytes.
-    /// # Note
-    /// This is NOT just a byte array of the internal string. It is prefixed with
-    /// the length of the string encoded as a VarInt, as per the Minecraft Protocol's
-    /// specification for the structure of a packet string.
-    pub fn to_mc_string_bytes(string: String) -> Vec<u8> {
-        let mut bytes = Vec::<u8>::new();
-
-        let string_len = TryInto::<i32>::try_into(string.len()).unwrap();
-        bytes.append(&mut VarInt::from_i32(string_len).to_bytes());
-        bytes.append(&mut string.into_bytes());
-
-        bytes
-    }
-
-    /// Reads VarInt bytes from the front of the provided range.
-    pub fn scan_varint_from_bytes(bytes: &[u8]) -> i32 {
-        let (val, _slice) = match super::from_varint_bytes(bytes) {
-            Ok(t) => t,
-            Err(msg) => panic!("{}", msg),
-        };
-
-        val
-    }
-
-    /// Parses an i32 to a VarInt.
-    pub fn to_varint_bytes(value: i32) -> Vec<u8> {
-        super::to_varint(value)
-    }
-
-    /// Retrieves the length of an i32 as it were serialized to a VarInt.
-    pub fn varint_byte_size(value: i32) -> i32 {
-        VarInt::from_i32(value).len()
-    }
-}
 
 pub trait MCType: Sized {
     /// Copies the data of this `MCType` and encodes it according to itso
@@ -133,13 +90,17 @@ pub trait MCType: Sized {
 #[allow(dead_code)]
 pub struct MCString {
     size: VarInt,
-    string: String,
+    bytes: Vec<u8>,
 }
 
 #[allow(dead_code)]
 impl MCString {
-    pub fn string(&self) -> &String {
-        &self.string
+    pub fn size(&self) -> &VarInt {
+        &self.size
+    }
+
+    pub fn bytes(&self) -> &Vec<u8> {
+        &self.bytes
     }
 }
 
@@ -155,8 +116,14 @@ impl From<String> for MCString {
         };
         MCString {
             size: VarInt::from(size),
-            string: value,
+            bytes: value.into_bytes(),
         }
+    }
+}
+
+impl Into<String> for MCString {
+    fn into(self) -> String {
+        String::from_utf8(self.bytes).unwrap()
     }
 }
 
@@ -172,17 +139,18 @@ impl From<&str> for MCString {
         };
         MCString {
             size: VarInt::from(size),
-            string: value.to_owned(),
+            bytes: value.into(),
         }
     }
 }
 
 impl MCType for MCString {
+    /// Serializes the MCString to a packet-structured array of bytes.
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::<u8>::new();
 
         bytes.append(&mut self.size.to_bytes());
-        bytes.append(&mut self.string.as_bytes().to_vec());
+        bytes.append(&mut self.bytes.clone());
 
         bytes
     }
@@ -207,19 +175,12 @@ impl MCType for MCString {
             ))
         } else {
             let string = string_res.unwrap();
-            Ok(MCString { size, string })
+            Ok(MCString { size, bytes: string.into_bytes() })
         }
     }
 
     fn size(&self) -> i32 {
-        self.size.len() + TryInto::<i32>::try_into(self.string.len()).unwrap()
-    }
-}
-
-#[allow(dead_code)]
-impl MCString {
-    pub fn len(&self) -> i32 {
-        self.size.len()
+        self.size.len() + TryInto::<i32>::try_into(self.bytes.len()).unwrap()
     }
 }
 
@@ -429,11 +390,8 @@ pub struct JsonResponse {
 }
 
 impl JsonResponse {
-    // this fucking sucks, stop using MCString
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
-        let mc_string = MCString::from_bytes(bytes)?;
-
-        let value: Value = serde_json::from_str(&mc_string.string())?;
+        let value: Value = serde_json::from_slice(bytes)?;
 
         Ok(JsonResponse { data: value })
     }

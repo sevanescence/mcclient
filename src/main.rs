@@ -8,6 +8,7 @@ mod tests;
 
 // NOTE: Commit changes to OutboundPacket before rewriting serialize_packet
 
+// TODO: Continue using (and reimplement) MC Types, but only use them internally
 fn main() {
     const DOMAIN: &str = "localhost";
     const PORT: u16 = 25565;

@@ -1,4 +1,4 @@
-use crate::mc::{mctypes::PacketBytesBuilder, packet::OutboundPacket};
+use crate::mc::{mctypes::{PacketBytesBuilder, VarInt}, packet::OutboundPacket};
 
 #[repr(i32)]
 #[derive(Clone, Copy)]
@@ -24,10 +24,10 @@ pub struct Handshake {
 impl OutboundPacket for Handshake {
     fn to_bytes(&self) -> Vec<u8> {
         PacketBytesBuilder::new()
-            .append_i32_as_varint(self.protocol_version)
+            .append_varint(&VarInt::from_i32(self.protocol_version))
             .append_string(self.server_addr.clone())
             .append_u16(self.port)
-            .append_i32_as_varint(self.next_state.into())
+            .append_varint(&VarInt::from_i32(self.next_state.into()))
         .byte_buffer
     }
 

@@ -1,6 +1,6 @@
 use std::io;
 
-use super::mctypes::{PacketBytesBuilder, VarInt, mc_types};
+use super::mctypes::{PacketBytesBuilder, VarInt};
 
 pub mod clientbound;
 pub mod packet_ids;
@@ -32,15 +32,31 @@ pub trait InboundPacket: Sized {
     fn packet_id(&self) -> i32;
 }
 
+pub struct OutboundPacketBuffer {
+    packet_data: Vec<u8>
+}
+
+impl From<&dyn OutboundPacket> for OutboundPacketBuffer {
+    fn from(value: &dyn OutboundPacket) -> Self {
+        OutboundPacketBuffer { packet_data: serialize_packet(value) }
+    }
+}
+
+impl OutboundPacketBuffer {
+    pub fn data(&self) -> &Vec<u8> {
+        &self.packet_data
+    }
+}
+
 /// Serialize a serverbound packet to be sent to a server.
 /// Packet structure: https://wiki.vg/Protocol#Packet_format
-pub fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
+fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
     let packet_id_serialized = VarInt::from_i32(data.packet_id());
     let packet_data_bytes = data.to_bytes();
     let packet_size = packet_id_serialized.len() + packet_data_bytes.len() as i32;
 
     PacketBytesBuilder::new()
-        .append_i32_as_varint(packet_size)
+        .append_varint(&VarInt::from_i32(packet_size))
         .append_varint(&packet_id_serialized)
         .append_bytes(&packet_data_bytes)
     .byte_buffer

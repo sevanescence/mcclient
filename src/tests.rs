@@ -3,11 +3,10 @@ mod tests {
     use crate::mc::{
         mctypes::{MCType, VarInt},
         packet::{
-            serialize_packet,
             serverbound::{
                 handshake::{Handshake, NextState},
                 status_request::StatusRequest,
-            },
+            }, OutboundPacketBuffer, OutboundPacket,
         },
         PROTOCOL_VERSION,
     };
@@ -84,13 +83,15 @@ mod tests {
         fake_packet_bytes.append(&mut 25565_u16.to_be_bytes().to_vec());
         fake_packet_bytes.append(&mut VarInt::from(NextState::STATUS as i32).to_bytes());
 
-        assert_eq!(serialize_packet(&handshake), fake_packet_bytes);
+        //assert_eq!(serialize_packet(&handshake), fake_packet_bytes);
+        assert_eq!(*OutboundPacketBuffer::from(&handshake as &dyn OutboundPacket).data(), fake_packet_bytes);
     }
 
     #[test]
     fn status_request_packet_serialization() {
         let status_request = StatusRequest;
 
-        assert_eq!(serialize_packet(&status_request), vec![0x01, 0x00]);
+        //assert_eq!(serialize_packet(&status_request), vec![0x01, 0x00]);
+        assert_eq!(*OutboundPacketBuffer::from(&status_request as &dyn OutboundPacket).data(), vec![0x01, 0x00]);
     }
 }
