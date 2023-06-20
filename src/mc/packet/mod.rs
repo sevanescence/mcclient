@@ -1,10 +1,13 @@
 use std::io;
 
-use super::mctypes::{PacketBytesBuilder, VarInt};
+use self::builder::PacketBytesBuilder;
+
+use super::mctypes::VarInt;
 
 pub mod clientbound;
 pub mod packet_ids;
 pub mod serverbound;
+pub mod builder;
 
 /// Interfaces serverbound packets. Structs implementing this trait are
 /// expected to be mcproto-compliant packets; transfering malformatted

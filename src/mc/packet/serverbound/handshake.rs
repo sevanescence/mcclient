@@ -1,4 +1,4 @@
-use crate::mc::{mctypes::{PacketBytesBuilder, VarInt}, packet::OutboundPacket};
+use crate::mc::{mctypes::VarInt, packet::{OutboundPacket, builder::PacketBytesBuilder}};
 
 #[repr(i32)]
 #[derive(Clone, Copy)]

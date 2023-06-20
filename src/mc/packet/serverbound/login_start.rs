@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::mc::{mctypes::PacketBytesBuilder, packet::OutboundPacket};
+use crate::mc::packet::{OutboundPacket, builder::PacketBytesBuilder};
 
 pub struct LoginStart {
     pub username: String,
