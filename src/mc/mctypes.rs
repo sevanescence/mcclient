@@ -11,7 +11,7 @@ use serde_json::Value;
 /// corresponds to the specification of each data type defined by the
 /// Minecraft protocol.
 pub struct PacketBytesBuilder {
-    pub byte_buffer: Vec<u8>,
+    byte_buffer: Vec<u8>,
 }
 
 // TODO: Finish this. Not every data type is supported. NOTE: Might
@@ -34,6 +34,8 @@ impl PacketBytesBuilder {
         self
     }
 
+    // TODO: Why not just make this take a Into<MCString> ? MCStrings end up doing
+    //       redundant copies.
     pub fn append_string<S: Into<String>>(mut self, to_string: S) -> Self {
         //let mc_string = mc_types::to_mc_string_bytes(to_string.into());
         let mc_string = MCString::from(to_string.into());
@@ -65,6 +67,8 @@ impl PacketBytesBuilder {
 
         self
     }
+
+    pub fn build(&mut self) -> Vec<u8> { std::mem::take(&mut self.byte_buffer) }
 }
 
 

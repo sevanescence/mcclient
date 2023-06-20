@@ -17,7 +17,7 @@ impl OutboundPacket for LoginStart {
             builder = builder.append_uuid(&self.uuid);
         }
 
-        builder.byte_buffer
+        builder.build()
     }
 
     fn packet_id(&self) -> i32 {

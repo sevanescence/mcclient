@@ -28,7 +28,7 @@ impl OutboundPacket for Handshake {
             .append_string(self.server_addr.clone())
             .append_u16(self.port)
             .append_varint(&VarInt::from_i32(self.next_state.into()))
-        .byte_buffer
+        .build()
     }
 
     fn packet_id(&self) -> i32 {

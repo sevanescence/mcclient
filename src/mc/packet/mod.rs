@@ -59,7 +59,7 @@ fn serialize_packet(data: &dyn OutboundPacket) -> Vec<u8> {
         .append_varint(&VarInt::from_i32(packet_size))
         .append_varint(&packet_id_serialized)
         .append_bytes(&packet_data_bytes)
-    .byte_buffer
+    .build()
 }
 
 pub struct MCPacketHeader {
