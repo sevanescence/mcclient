@@ -1,4 +1,4 @@
-use crate::mc::{mctypes::VarInt, packet::{OutboundPacket, builder::PacketBytesBuilder}};
+use crate::mc::{mctypes::VarInt, packet::{OutboundPacket, builder::PacketBytesBuilder, packet_ids}};
 
 #[repr(i32)]
 #[derive(Clone, Copy)]
@@ -32,6 +32,6 @@ impl OutboundPacket for Handshake {
     }
 
     fn packet_id(&self) -> i32 {
-        0x00
+        packet_ids::serverbound::HANDSHAKE_PACKET_ID
     }
 }

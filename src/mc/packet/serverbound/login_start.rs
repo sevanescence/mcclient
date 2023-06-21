@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::mc::packet::{OutboundPacket, builder::PacketBytesBuilder};
+use crate::mc::packet::{OutboundPacket, builder::PacketBytesBuilder, packet_ids};
 
 pub struct LoginStart {
     pub username: String,
@@ -21,6 +21,6 @@ impl OutboundPacket for LoginStart {
     }
 
     fn packet_id(&self) -> i32 {
-        0x00
+        packet_ids::serverbound::LOGIN_START
     }
 }

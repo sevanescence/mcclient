@@ -2,7 +2,7 @@ use std::io;
 
 use crate::mc::{
     mctypes::JsonResponse,
-    packet::{packet_ids::STATUS_RES_PACKET_ID, ClientboundRawPacket, InboundPacket},
+    packet::{ClientboundRawPacket, InboundPacket, packet_ids},
 };
 
 pub struct StatusResponse {
@@ -19,6 +19,6 @@ impl InboundPacket for StatusResponse {
     }
 
     fn packet_id(&self) -> i32 {
-        STATUS_RES_PACKET_ID
+        packet_ids::clientbound::STATUS_RESPONSE
     }
 }

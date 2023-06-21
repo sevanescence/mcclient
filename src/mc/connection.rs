@@ -6,7 +6,7 @@ use super::{
             login_success::LoginSuccess, ping_response::PingResponse,
             status_response::StatusResponse,
         },
-        packet_ids::STATUS_RES_PACKET_ID,
+        packet_ids,
         serverbound::{
             handshake::{Handshake, NextState},
             status_request::StatusRequest,
@@ -108,7 +108,7 @@ impl Connection for OfflineConnection {
         self.stream.send(&StatusRequest)?;
 
         let inbound = self.stream.read()?;
-        if inbound.header.id != STATUS_RES_PACKET_ID {
+        if inbound.header.id != packet_ids::clientbound::STATUS_RESPONSE {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Bad packet ID."));
         }
         let response = StatusResponse::from_data(&inbound)?;

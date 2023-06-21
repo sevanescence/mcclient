@@ -1,4 +1,4 @@
-use crate::mc::packet::OutboundPacket;
+use crate::mc::packet::{OutboundPacket, packet_ids};
 
 pub struct StatusRequest;
 
@@ -8,6 +8,6 @@ impl OutboundPacket for StatusRequest {
     }
 
     fn packet_id(&self) -> i32 {
-        0x00
+        packet_ids::serverbound::STATUS_REQUEST
     }
 }
