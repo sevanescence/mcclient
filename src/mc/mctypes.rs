@@ -158,14 +158,11 @@ impl From<&[u8]> for VarInt {
     /// is evaluated to greater than 5 bytes in size. This can be caused by
     /// either the wrong data type being read or the bytes being badly formatted.
     fn from(bytes: &[u8]) -> Self {
-        //              v THESE WARNINGS STAY HERE UNTIL WE'RE DONE
-        let (val, slice) = match from_varint_bytes(bytes) {
+        let val = match from_varint_bytes(bytes) {
             Ok(t) => t,
             Err(msg) => panic!("{}", msg),
         };
         VarInt {
-            // TODO: REFACTOR THE FUCKING FUNCTION TO RETURN THE POPPED SLICE
-            //          (DO NOT EAT UNTIL THIS IS DONE)
             bytes: VarInt::from_i32(val).to_bytes(),
         }
     }
@@ -183,7 +180,7 @@ impl MCType for VarInt {
     /// Similar to VarInt::from for From<&[u8]>, however this is recommended
     /// as it returns an error instead of panicking.
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
-        let (val, slice) = from_varint_bytes(bytes)?;
+        let val = from_varint_bytes(bytes)?;
 
         Ok(VarInt {
             bytes: VarInt::from_i32(val).to_bytes(),
@@ -226,7 +223,7 @@ impl VarInt {
     /// if the number is evaluated to greater than 5 bytes in size. This can be caused
     /// by either the wrong data type being read or the bytes being badly formatted.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
-        let (val, _slice) = from_varint_bytes(bytes)?;
+        let val = from_varint_bytes(bytes)?;
         Ok(VarInt {
             bytes: VarInt::from_i32(val).to_bytes(),
         })
@@ -253,7 +250,7 @@ impl VarInt {
 
 impl Into<i32> for VarInt {
     fn into(self) -> i32 {
-        from_varint_bytes(&self.bytes).unwrap().0
+        from_varint_bytes(&self.bytes).unwrap()
     }
 }
 
@@ -262,17 +259,15 @@ impl Into<i32> for VarInt {
 /// A pair containing the parsed i32 value, and the range excluding the parsed VarInt.
 /// # Note
 /// This is meant to be used internally.
-fn from_varint_bytes(bytes: &[u8]) -> Result<(i32, &[u8]), io::Error> {
+fn from_varint_bytes(bytes: &[u8]) -> Result<i32, io::Error> {
     let mut value = 0;
     let mut pos = 0;
-    let mut end_idx = 0;
 
     const SEGMENT_BITS: i32 = 0x7F;
     const CONTINUE_BIT: i32 = 0x80;
 
     for b in bytes.iter() {
         value |= ((*b as i32) & SEGMENT_BITS) << pos;
-        end_idx += 1;
 
         if (*b as i32) & CONTINUE_BIT == 0 {
             break;
@@ -288,7 +283,7 @@ fn from_varint_bytes(bytes: &[u8]) -> Result<(i32, &[u8]), io::Error> {
         }
     }
 
-    Ok((value, &bytes[..end_idx]))
+    Ok(value)
 }
 
 /// Parses an i32 to a serialized VarInt byte array.
