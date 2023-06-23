@@ -54,7 +54,7 @@ pub trait Connection: Sized {
     /// # Errors
     /// This function will return an error if the login attempt fails. It can be inferred that
     /// failure to receive this packet means the connection cannot continue.
-    fn login<T: Into<String> + Clone>(&mut self, username: T) -> Result<LoginSuccess, io::Error>;
+    fn login<T: Into<String>>(&mut self, username: T) -> Result<LoginSuccess, io::Error>;
 
     /// Gets the stream managed by this connection, which is used to send and receive packets.
     fn sock(&mut self) -> &mut MinecraftStream;
@@ -121,7 +121,7 @@ impl Connection for OfflineConnection {
         Ok(PingResponse {})
     }
 
-    fn login<T: Into<String> + Clone>(&mut self, username: T) -> Result<LoginSuccess, io::Error> {
+    fn login<T: Into<String>>(&mut self, username: T) -> Result<LoginSuccess, io::Error> {
         self.username = Some(username.into());
         Ok(LoginSuccess {})
     }
