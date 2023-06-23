@@ -14,6 +14,12 @@ impl Into<i32> for NextState {
     }
 }
 
+impl Into<VarInt> for NextState {
+    fn into(self) -> VarInt {
+        VarInt::from_i32(self as i32)
+    }
+}
+
 pub struct Handshake {
     pub protocol_version: i32,
     pub server_addr: String,
@@ -27,7 +33,7 @@ impl OutboundPacket for Handshake {
             .append_varint(&VarInt::from_i32(self.protocol_version))
             .append_string(self.server_addr.clone())
             .append_u16(self.port)
-            .append_varint(&VarInt::from_i32(self.next_state.into()))
+            .append_varint(&self.next_state.into())
         .build()
     }
 

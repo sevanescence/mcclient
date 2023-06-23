@@ -2,7 +2,6 @@ use std::io;
 
 use serde_json::Value;
 
-
 pub trait MCType: Sized {
     /// Copies the data of this `MCType` and encodes it according to itso
     /// Minecraft protocol packet structure.

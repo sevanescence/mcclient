@@ -36,7 +36,7 @@ pub trait Connection: Sized {
     /// Attempts to connect to a Minecraft server. On success, the `Connection` is returned.
     /// # Errors
     /// This function will return an error if the connection cannot be established.
-    fn connect<T: Into<String> + Clone>(domain: T, port: u16) -> Result<Self, io::Error>;
+    fn connect<T: Into<String>>(domain: T, port: u16) -> Result<Self, io::Error>;
     /// Attempts to fetch a status report of the server.
     /// # Errors
     /// This function will return an error if the connection cannot be established. It can be
@@ -62,7 +62,7 @@ pub trait Connection: Sized {
     /// Gets the domain of the connection. 
     /// # Note
     /// This retrieves the domain passed to the initial connection
-    /// attempt, not the endpoint IP resolved by the underlying TCP stream object.
+    /// attempt, not the endpoint IP resolved by an underlying TCP stream object.
     fn domain(&self) -> &str;
     /// Gets the port of the connection.
     fn port(&self) -> u16;
@@ -85,12 +85,13 @@ pub struct OfflineConnection {
 
 #[allow(unused)]
 impl Connection for OfflineConnection {
-    fn connect<T: Into<String> + Clone>(domain: T, port: u16) -> Result<Self, io::Error> {
-        let mut stream = MinecraftStream::connect(format!("{}:{}", domain.clone().into(), port))?;
+    fn connect<T: Into<String>>(domain: T, port: u16) -> Result<Self, io::Error> {
+        let domain_parsed = domain.into();
+        let mut stream = MinecraftStream::connect(format!("{}:{}", domain_parsed.clone(), port))?;
 
         Ok(OfflineConnection {
             stream,
-            domain: domain.into(),
+            domain: domain_parsed,
             port,
             username: None,
         })
