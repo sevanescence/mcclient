@@ -38,9 +38,7 @@ impl PacketBytesBuilder {
     //       redundant copies.
     /// Appends a string as a MC-encoded string to the buffer.
     pub fn append_string<S: Into<String>>(mut self, to_string: S) -> Self {
-        //let mc_string = mc_types::to_mc_string_bytes(to_string.into());
-        let mc_string = MCString::from(to_string.into());
-        self.byte_buffer.extend(mc_string.to_bytes());
+        self.byte_buffer.extend(MCString::from(to_string.into()).to_bytes());
 
         self
     }

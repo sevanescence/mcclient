@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, slice};
 
 use serde_json::Value;
 
@@ -21,11 +21,13 @@ pub trait MCType: Sized {
     fn size(&self) -> i32;
 }
 
-#[allow(dead_code)]
+/// Represents a Minecraft Protocol-encoded string, i.e., a UTF-8 string prefixed
+/// with its length encoded as a `VarInt`. This structure is immutable and is only
+/// used for serialization and deserialization.
 pub struct MCString {
     size: VarInt,
     bytes: Vec<u8>,
-}
+} // TODO: Find most optimal way to represent MCString
 
 #[allow(dead_code)]
 impl MCString {
@@ -46,10 +48,7 @@ impl From<String> for MCString {
     /// This function will panic if the size of the String cannot
     /// be parsed to an `i32`.
     fn from(value: String) -> Self {
-        let size: i32 = match value.len().try_into() {
-            Ok(num) => num,
-            Err(msg) => panic!("{}", msg),
-        };
+        let size: i32 = value.len().try_into().unwrap();
         MCString {
             size: VarInt::from(size),
             bytes: value.into_bytes(),
@@ -320,8 +319,13 @@ pub struct JsonResponse {
 impl JsonResponse {
     // TODO: Optimize this. Lots of dirty copying goes on here, and it isn't just this function.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
-        let mc_string = MCString::from_bytes(bytes)?;
-        let value: Value = serde_json::from_slice(mc_string.bytes())?;
+        //let value: Value = serde_json::from_slice(MCString::from_bytes(bytes)?.bytes())?;
+
+        // Optimized. Avoids using MCString which unnecessarily copies. The fact that I have to
+        // comment this is pretty telling, but I'm not really sure where I would put this.
+        let string_size = VarInt::from_bytes(bytes)?;
+        let bytes_excluding_size_prefix = &bytes[string_size.len() as usize..];
+        let value: Value = serde_json::from_slice(bytes_excluding_size_prefix)?;
 
         Ok(JsonResponse { data: value })
     }

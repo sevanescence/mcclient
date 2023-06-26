@@ -10,7 +10,7 @@ mod tests;
 
 // TODO: Continue using (and reimplement) MC Types, but only use them internally
 fn main() {
-    const DOMAIN: &str = "localhost";
+    const DOMAIN: &'static str = "localhost";
     const PORT: u16 = 25565;
     //const USERNAME: &str = "MonkeyDLuffy";
 
@@ -26,7 +26,11 @@ fn main() {
     let status_response = connection.status().expect("Could not get status.");
     println!("Response: {:#?}", status_response.json_response);
 
+    connection.reset();
+    let _login_success = connection.login("Makoto").expect("Could not log in.");
+    println!("{:#?}", "Login Success?");
+
     // TODO: Implement ping response and login success.
-    let _ping_response = connection.ping().expect("Could not ping.");
-    println!("Ping response: {:#?}", _ping_response);
+    // let _ping_response = connection.ping().expect("Could not ping.");
+    // println!("Ping response: {:#?}", _ping_response);
 }

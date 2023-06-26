@@ -1,5 +1,7 @@
 use std::io;
 
+use crate::mc::mctypes::{VarInt, MCString, MCType};
+
 use super::{
     packet::{
         clientbound::{
@@ -9,7 +11,7 @@ use super::{
         packet_ids,
         serverbound::{
             handshake::{Handshake, NextState},
-            status_request::StatusRequest,
+            status_request::StatusRequest, login_start::LoginStart,
         },
         InboundPacket,
     },
@@ -58,6 +60,9 @@ pub trait Connection: Sized {
 
     /// Gets the stream managed by this connection, which is used to send and receive packets.
     fn sock(&mut self) -> &mut MinecraftStream;
+
+    /// Resets the connection. This must be done when issuing different requests established via handshakes.
+    fn reset(&mut self);
 
     /// Gets the domain of the connection. 
     /// # Note
@@ -122,12 +127,38 @@ impl Connection for OfflineConnection {
     }
 
     fn login<T: Into<String>>(&mut self, username: T) -> Result<LoginSuccess, io::Error> {
-        self.username = Some(username.into());
+        let username_parsed = username.into();
+        self.username = Some(username_parsed.clone());
+        let login_handshake = Handshake {
+            protocol_version: PROTOCOL_VERSION.into(),
+            server_addr: self.domain.clone().into(),
+            port: self.port(),
+            next_state: NextState::LOGIN
+        };
+        let login_start = LoginStart {
+            username: username_parsed,
+            uuid: None
+        };
+
+        self.stream.send(&login_handshake).expect("Could not send handshake.");
+        self.stream.send(&login_start).expect("Could not send login start.");
+
+        let inbound = self.stream.read().expect("Cannot read packet.");
+        println!("Packet ID: {}, {}", inbound.header.id, inbound.header.size);
+        // let mut inbound_data = inbound.data.clone();
+        // let size = VarInt::from_vec_front(&mut inbound_data).unwrap();
+        // let relevant_bytes = &inbound_data[size.bytes().len() - 1 as usize..];
+        // println!("Packet data: {:?}", TryInto::<String>::try_into(MCString::from_bytes(relevant_bytes).unwrap()));
+
         Ok(LoginSuccess {})
     }
 
     fn sock(&mut self) -> &mut MinecraftStream {
         &mut self.stream
+    }
+
+    fn reset(&mut self) {
+        self.stream = MinecraftStream::connect(format!("{}:{}", self.domain.clone(), self.port.clone())).unwrap();
     }
 
     fn domain(&self) -> &str {
