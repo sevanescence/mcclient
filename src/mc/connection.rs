@@ -1,7 +1,5 @@
 use std::io;
 
-use crate::mc::mctypes::{VarInt, MCString, MCType};
-
 use super::{
     packet::{
         clientbound::{
@@ -80,7 +78,6 @@ pub trait Connection: Sized {
 /// The handshake packet is sent when either a status or login request
 /// is made. The stream itself attempts to open upon construction of
 /// the object.
-#[allow(unused)]
 pub struct OfflineConnection {
     stream: MinecraftStream,
     domain: String,
@@ -88,11 +85,10 @@ pub struct OfflineConnection {
     username: Option<String>,
 }
 
-#[allow(unused)]
 impl Connection for OfflineConnection {
     fn connect<T: Into<String>>(domain: T, port: u16) -> Result<Self, io::Error> {
         let domain_parsed = domain.into();
-        let mut stream = MinecraftStream::connect(format!("{}:{}", domain_parsed.clone(), port))?;
+        let stream = MinecraftStream::connect(format!("{}:{}", domain_parsed.clone(), port))?;
 
         Ok(OfflineConnection {
             stream,
@@ -145,6 +141,7 @@ impl Connection for OfflineConnection {
 
         let inbound = self.stream.read().expect("Cannot read packet.");
         println!("Packet ID: {}, {}", inbound.header.id, inbound.header.size);
+        // Ignore this, working on login.
         // let mut inbound_data = inbound.data.clone();
         // let size = VarInt::from_vec_front(&mut inbound_data).unwrap();
         // let relevant_bytes = &inbound_data[size.bytes().len() - 1 as usize..];
